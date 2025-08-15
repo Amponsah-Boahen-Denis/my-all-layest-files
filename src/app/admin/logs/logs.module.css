@@ -1,0 +1,273 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.title {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.loading {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #7f8c8d;
+  margin: 4rem 0;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filterSelect {
+  padding: 0.75rem;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: white;
+  min-width: 150px;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.searchInput {
+  padding: 0.75rem;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  min-width: 200px;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.exportButton {
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.exportButton:hover {
+  background-color: #229954;
+}
+
+.clearButton {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.clearButton:hover {
+  background-color: #c0392b;
+}
+
+.logsContainer {
+  background-color: white;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.logsHeader {
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.logsHeader h2 {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.logStats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.logStats span {
+  background-color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  color: #2c3e50;
+  font-size: 0.8rem;
+  border: 1px solid #e9ecef;
+  font-weight: 500;
+}
+
+.noLogs {
+  text-align: center;
+  color: #7f8c8d;
+  padding: 3rem;
+  font-size: 1.1rem;
+}
+
+.logsList {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.logEntry {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.logEntry:hover {
+  background-color: #f8f9fa;
+}
+
+.logEntry:last-child {
+  border-bottom: none;
+}
+
+.logHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.logMeta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.levelBadge {
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.categoryIcon {
+  font-size: 1.2rem;
+  min-width: 24px;
+  text-align: center;
+}
+
+.timestamp {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+  font-family: monospace;
+}
+
+.userId {
+  color: #3498db;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background-color: #f8f9fa;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.logMessage {
+  color: #2c3e50;
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.logDetails {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.detail {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+  font-family: monospace;
+  background-color: #f8f9fa;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filters {
+    flex-direction: column;
+  }
+  
+  .filterSelect,
+  .searchInput {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .actions {
+    justify-content: center;
+  }
+  
+  .logsHeader {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  
+  .logStats {
+    justify-content: center;
+  }
+  
+  .logHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .logMeta {
+    justify-content: center;
+  }
+} 

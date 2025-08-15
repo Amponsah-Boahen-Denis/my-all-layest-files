@@ -1,0 +1,229 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.title {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.loading {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #7f8c8d;
+  margin: 4rem 0;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.searchBox {
+  flex: 1;
+  max-width: 400px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.stats {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.stats span {
+  background-color: #f8f9fa;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  border: 1px solid #e9ecef;
+}
+
+.usersTable {
+  background-color: white;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1.5fr;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.headerCell {
+  padding: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  text-align: left;
+  border-right: 1px solid #e9ecef;
+}
+
+.headerCell:last-child {
+  border-right: none;
+}
+
+.userRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1.5fr;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.userRow:hover {
+  background-color: #f8f9fa;
+}
+
+.userRow:last-child {
+  border-bottom: none;
+}
+
+.userInfo {
+  padding: 1rem;
+  border-right: 1px solid #e9ecef;
+}
+
+.userInfo h3 {
+  color: #2c3e50;
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+}
+
+.userInfo p {
+  color: #7f8c8d;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.statusCell,
+.dateCell,
+.searchesCell,
+.actionsCell {
+  padding: 1rem;
+  border-right: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+}
+
+.actionsCell {
+  border-right: none;
+}
+
+.statusBadge {
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+  font-weight: 500;
+}
+
+.dateCell {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+.searchesCell {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.actionsCell {
+  gap: 0.5rem;
+}
+
+.actionButton {
+  background-color: #f39c12;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background-color 0.3s ease;
+}
+
+.actionButton:hover {
+  background-color: #e67e22;
+}
+
+.deleteButton {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background-color 0.3s ease;
+}
+
+.deleteButton:hover {
+  background-color: #c0392b;
+}
+
+.noResults {
+  text-align: center;
+  color: #7f8c8d;
+  padding: 3rem;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .searchBox {
+    max-width: none;
+  }
+  
+  .stats {
+    justify-content: center;
+  }
+  
+  .tableHeader,
+  .userRow {
+    grid-template-columns: 1fr;
+  }
+  
+  .headerCell,
+  .userInfo,
+  .statusCell,
+  .dateCell,
+  .searchesCell,
+  .actionsCell {
+    border-right: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .userRow:last-child .actionsCell {
+    border-bottom: none;
+  }
+} 

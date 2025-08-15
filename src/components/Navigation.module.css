@@ -1,0 +1,267 @@
+.nav {
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+  text-decoration: none;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+}
+
+.links {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+}
+
+.link {
+  color: #4a5568;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  padding: 8px 16px;
+  border-radius: 6px;
+  position: relative;
+}
+
+.link:hover {
+  color: #667eea;
+  background: #f7fafc;
+}
+
+.link:active {
+  transform: translateY(1px);
+}
+
+.auth {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+/* User Section Styles */
+.userSection {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.userName {
+  color: #4a5568;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.logoutButton {
+  background: #e53e3e;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logoutButton:hover {
+  background: #c53030;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+}
+
+.logoutButton:active {
+  transform: translateY(0);
+}
+
+.loginLink {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 10px 20px;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  background: transparent;
+}
+
+.loginLink:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.registerLink {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.registerLink:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.registerLink:active {
+  transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+    height: 60px;
+  }
+  
+  .logo {
+    font-size: 1.25rem;
+  }
+  
+  .links {
+    gap: 20px;
+  }
+  
+  .link {
+    font-size: 0.9rem;
+    padding: 6px 12px;
+  }
+  
+  .auth {
+    gap: 12px;
+  }
+  
+  .loginLink,
+  .registerLink {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+  
+  .userSection {
+    gap: 12px;
+  }
+  
+  .userName {
+    font-size: 0.85rem;
+  }
+  
+  .logoutButton {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    flex-direction: column;
+    height: auto;
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .links {
+    order: 2;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .auth {
+    order: 3;
+    gap: 12px;
+  }
+  
+  .link {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+  
+  .loginLink,
+  .registerLink {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+  
+  .userSection {
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+  
+  .userName {
+    font-size: 0.8rem;
+  }
+  
+  .logoutButton {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .nav {
+    background: #1a202c;
+    border-bottom-color: #4a5568;
+  }
+  
+  .logo {
+    color: #e2e8f0;
+  }
+  
+  .link {
+    color: #cbd5e0;
+  }
+  
+  .link:hover {
+    color: #667eea;
+    background: #2d3748;
+  }
+  
+  .userName {
+    color: #cbd5e0;
+  }
+  
+  .loginLink {
+    color: #667eea;
+    border-color: #667eea;
+  }
+  
+  .loginLink:hover {
+    background: #667eea;
+    color: white;
+  }
+} 
