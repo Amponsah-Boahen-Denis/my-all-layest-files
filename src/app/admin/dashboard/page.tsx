@@ -166,7 +166,64 @@ export default function AdminDashboard() {
             View Activity Logs
           </button>
           <button className={styles.actionButton}>
+            Cache Management
+          </button>
+          <button className={styles.actionButton}>
             System Settings
+          </button>
+        </div>
+      </div>
+
+      {/* Cache Management Section */}
+      <div className={styles.cacheSection}>
+        <h2>Cache & Google API Status</h2>
+        <div className={styles.cacheGrid}>
+          <div className={styles.cacheCard}>
+            <h3>Cache Performance</h3>
+            <div className={styles.cacheStats}>
+              <div className={styles.cacheStat}>
+                <span className={styles.statLabel}>Hit Rate</span>
+                <span className={styles.statValue}>85%</span>
+              </div>
+              <div className={styles.cacheStat}>
+                <span className={styles.statLabel}>Total Entries</span>
+                <span className={styles.statValue}>247</span>
+              </div>
+              <div className={styles.cacheStat}>
+                <span className={styles.statLabel}>Memory Usage</span>
+                <span className={styles.statValue}>2.3 MB</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className={styles.cacheCard}>
+            <h3>Google API Integration</h3>
+            <div className={styles.apiStatus}>
+              <div className={styles.statusItem}>
+                <span className={styles.statusLabel}>API Status</span>
+                <span className={styles.statusValue}>🟢 Active</span>
+              </div>
+              <div className={styles.statusItem}>
+                <span className={styles.statusLabel}>Fallback Searches</span>
+                <span className={styles.statusValue}>156</span>
+              </div>
+              <div className={styles.statusItem}>
+                <span className={styles.statusLabel}>Stores Synced</span>
+                <span className={styles.statusValue}>89</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className={styles.cacheActions}>
+          <button className={styles.cacheButton}>
+            View Cache Stats
+          </button>
+          <button className={styles.cacheButton}>
+            Clear Cache
+          </button>
+          <button className={styles.cacheButton}>
+            Popular Searches
           </button>
         </div>
       </div>

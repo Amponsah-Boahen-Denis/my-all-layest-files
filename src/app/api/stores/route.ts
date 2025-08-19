@@ -87,6 +87,8 @@ export async function POST(request: NextRequest) {
       hours,
       rating,
       tags,
+      source,
+      googlePlaceId,
       createdBy
     } = body;
 
@@ -121,6 +123,8 @@ export async function POST(request: NextRequest) {
       rating: rating || 0,
       tags: tags || [],
       isActive: true,
+      source: source || 'user_created',
+      googlePlaceId: googlePlaceId || null,
       createdBy
     });
 

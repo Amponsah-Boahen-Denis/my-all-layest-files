@@ -17,7 +17,9 @@ export interface IStore extends Document {
   rating?: number;
   tags?: string[];
   isActive: boolean;
-  createdBy: mongoose.Types.ObjectId;
+  source: 'user_created' | 'google_api' | 'database';
+  googlePlaceId?: string;
+  createdBy: mongoose.Types.ObjectId | string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -102,6 +104,16 @@ const StoreSchema = new Schema<IStore>({
     type: Boolean,
     default: true
   },
+  source: {
+    type: String,
+    enum: ['user_created', 'google_api', 'database'],
+    default: 'user_created'
+  },
+  googlePlaceId: {
+    type: String,
+    sparse: true, // Allows multiple documents without this field
+    index: true
+  },
   createdBy: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -125,6 +137,8 @@ StoreSchema.index({ country: 1 });
 StoreSchema.index({ coordinates: '2dsphere' }); // For geospatial queries
 StoreSchema.index({ isActive: 1 });
 StoreSchema.index({ createdBy: 1 });
+StoreSchema.index({ source: 1 });
+StoreSchema.index({ googlePlaceId: 1 });
 
 // Compound index for location-based searches
 StoreSchema.index({ storeType: 1, country: 1, isActive: 1 });

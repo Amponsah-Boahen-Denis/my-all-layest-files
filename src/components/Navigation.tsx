@@ -49,6 +49,25 @@ const Navigation = () => {
                 <Link href="/profile" className={styles.link}>
                   Profile
                 </Link>
+                {/* Admin Navigation - Only show for admin users */}
+                {user?.role === 'admin' && (
+                  <div className={styles.adminDropdown}>
+                    <button className={styles.adminButton}>
+                      Admin ⚙️
+                    </button>
+                    <div className={styles.adminMenu}>
+                      <Link href="/admin/dashboard" className={styles.adminLink}>
+                        Dashboard
+                      </Link>
+                      <Link href="/admin/manage-users" className={styles.adminLink}>
+                        Manage Users
+                      </Link>
+                      <Link href="/admin/logs" className={styles.adminLink}>
+                        System Logs
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>

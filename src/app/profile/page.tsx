@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import sanitizeHtml from 'sanitize-html';
 import styles from './profile.module.css';
 
 const Profile = () => {
@@ -128,13 +127,13 @@ const Profile = () => {
       return;
     }
 
-    // Sanitize inputs
-    const sanitizedStoreName = sanitizeHtml(storeName, { allowedTags: [] });
-    const sanitizedAddress = sanitizeHtml(address, { allowedTags: [] });
-    const sanitizedPhone = phone ? sanitizeHtml(phone, { allowedTags: [] }) : null;
-    const sanitizedEmail = email ? sanitizeHtml(email, { allowedTags: [] }) : null;
-    const sanitizedWebsite = website ? sanitizeHtml(website, { allowedTags: [] }) : null;
-    const sanitizedCountry = sanitizeHtml(country, { allowedTags: [] });
+    // Use inputs directly (sanitization removed)
+    const sanitizedStoreName = storeName;
+    const sanitizedAddress = address;
+    const sanitizedPhone = phone;
+    const sanitizedEmail = email;
+    const sanitizedWebsite = website;
+    const sanitizedCountry = country;
 
     setIsLoading(true);
     setError(null);
@@ -217,7 +216,7 @@ const Profile = () => {
 
   // Handle search input change
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(sanitizeHtml(e.target.value, { allowedTags: [] }));
+    setSearchQuery(e.target.value);
     setPage(1); // Reset to first page on search
   }, []);
 
@@ -252,9 +251,6 @@ const Profile = () => {
 
       {/* Profile Header */}
       <div className={styles.profileHeader}>
-        <div className={styles.profileAvatar}>
-          <span className={styles.avatarText}>DU</span>
-        </div>
         <div className={styles.profileInfo}>
           <h1 className={styles.profileName}>Developer User</h1>
           <p className={styles.profileEmail}>dev@example.com</p>

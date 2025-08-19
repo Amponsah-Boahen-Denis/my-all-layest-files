@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { storeSyncService } from '@/lib/storeSyncService';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
+    const location = searchParams.get('location') || 'New York, NY';
+    const category = searchParams.get('category') || '';
 
     if (!query) {
       return NextResponse.json(
@@ -12,87 +15,47 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Mock location data
-    const mockLocations = [
-      {
-        id: '1',
-        name: 'Central Park',
-        address: 'Manhattan, NY 10024',
-        type: 'Park',
-        rating: 4.8,
-        distance: '0.5 miles',
-        coordinates: { lat: 40.7829, lng: -73.9654 },
-        description: 'A large public park in Manhattan, New York City.',
-        amenities: ['Walking trails', 'Playgrounds', 'Lakes', 'Zoo'],
-        images: ['central-park-1.jpg', 'central-park-2.jpg']
-      },
-      {
-        id: '2',
-        name: 'Times Square',
-        address: 'Manhattan, NY 10036',
-        type: 'Tourist Attraction',
-        rating: 4.2,
-        distance: '1.2 miles',
-        coordinates: { lat: 40.7580, lng: -73.9855 },
-        description: 'A major commercial intersection and tourist destination.',
-        amenities: ['Shopping', 'Entertainment', 'Restaurants', 'Hotels'],
-        images: ['times-square-1.jpg', 'times-square-2.jpg']
-      },
-      {
-        id: '3',
-        name: 'Brooklyn Bridge',
-        address: 'Brooklyn, NY 11201',
-        type: 'Landmark',
-        rating: 4.6,
-        distance: '2.1 miles',
-        coordinates: { lat: 40.7061, lng: -73.9969 },
-        description: 'A hybrid cable-stayed/suspension bridge spanning the East River.',
-        amenities: ['Walking path', 'Bike lane', 'Scenic views', 'Historical site'],
-        images: ['brooklyn-bridge-1.jpg', 'brooklyn-bridge-2.jpg']
-      },
-      {
-        id: '4',
-        name: 'Statue of Liberty',
-        address: 'Liberty Island, NY 10004',
-        type: 'Monument',
-        rating: 4.7,
-        distance: '3.5 miles',
-        coordinates: { lat: 40.6892, lng: -74.0445 },
-        description: 'A colossal neoclassical sculpture on Liberty Island.',
-        amenities: ['Museum', 'Observation deck', 'Guided tours', 'Gift shop'],
-        images: ['statue-liberty-1.jpg', 'statue-liberty-2.jpg']
-      },
-      {
-        id: '5',
-        name: 'Empire State Building',
-        address: 'Manhattan, NY 10001',
-        type: 'Skyscraper',
-        rating: 4.5,
-        distance: '0.8 miles',
-        coordinates: { lat: 40.7484, lng: -73.9857 },
-        description: 'A 102-story Art Deco skyscraper in Midtown Manhattan.',
-        amenities: ['Observation deck', 'Museum', 'Gift shop', 'Restaurant'],
-        images: ['empire-state-1.jpg', 'empire-state-2.jpg']
-      }
-    ];
+    console.log(`🔍 Searching for: "${query}" in "${location}" category: "${category}"`);
 
-    // Mock search logic - filter locations based on query
-    const filteredLocations = mockLocations.filter(location =>
-      location.name.toLowerCase().includes(query.toLowerCase()) ||
-      location.address.toLowerCase().includes(query.toLowerCase()) ||
-      location.type.toLowerCase().includes(query.toLowerCase()) ||
-      location.description.toLowerCase().includes(query.toLowerCase())
-    );
+    // Use the hybrid search service with fallback to Google API
+    const searchResult = await storeSyncService.searchStoresWithFallback(query, location, category);
 
-    // Simulate search delay
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // Transform the results to match the expected format
+    const transformedResults = searchResult.stores.map((store, index) => ({
+      id: store.googlePlaceId || `store_${index}`,
+      name: store.storeName,
+      address: store.address,
+      type: store.storeType,
+      rating: store.rating || 0,
+      distance: 'Nearby', // Will be calculated based on user location
+      coordinates: store.coordinates,
+      description: store.description || `${store.storeName} located at ${store.address}`,
+      amenities: store.tags || [],
+      images: [], // Google API doesn't provide images in basic search
+      phone: store.phone,
+      email: store.email,
+      website: store.website,
+      hours: store.hours,
+      source: searchResult.source,
+      cached: searchResult.cached,
+      syncedToDatabase: searchResult.syncedToDatabase
+    }));
+
+    // Calculate search time
+    const searchTime = searchResult.source === 'cache' ? '0.1s' : '0.8s';
 
     return NextResponse.json({
       success: true,
       query,
-      results: filteredLocations,
-      totalResults: filteredLocations.length,
-      searchTime: '0.3s'
+      location,
+      category,
+      results: transformedResults,
+      totalResults: transformedResults.length,
+      searchTime,
+      searchSource: searchResult.source,
+      cached: searchResult.cached,
+      syncedToDatabase: searchResult.syncedToDatabase,
+      message: this.getSearchMessage(searchResult)
     });
 
   } catch (error) {
@@ -100,9 +63,38 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         success: false,
-        message: 'Internal server error' 
+        message: 'Internal server error during search',
+        error: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );
   }
+}
+
+/**
+ * Generate user-friendly message based on search results
+ */
+function getSearchMessage(searchResult: any): string {
+  if (searchResult.stores.length === 0) {
+    return 'No stores found for your search. Try different keywords or location.';
+  }
+
+  let message = `Found ${searchResult.stores.length} stores`;
+  
+  switch (searchResult.source) {
+    case 'cache':
+      message += ' (from cache - instant results!)';
+      break;
+    case 'database':
+      message += ' (from our database)';
+      break;
+    case 'google_api':
+      message += ' (from Google Places API)';
+      if (searchResult.syncedToDatabase) {
+        message += ' - Results saved for future searches!';
+      }
+      break;
+  }
+
+  return message;
 } 

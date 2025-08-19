@@ -1,7 +1,92 @@
+// Database seeding script for initial store data
+// Run this to populate your database with sample stores
+
 import connectDB from './mongodb';
-import User from '@/models/User';
-import Store from '@/models/Store';
-import bcrypt from 'bcryptjs';
+import Store from '../models/Store';
+import User from '../models/User';
+
+const sampleStores = [
+  {
+    storeName: 'Tech Haven Electronics',
+    storeType: 'electronics',
+    address: '123 Tech Street, New York, NY 10001',
+    phone: '+1-555-0123',
+    email: 'info@techhaven.com',
+    website: 'https://techhaven.com',
+    country: 'United States',
+    coordinates: { lat: 40.7505, lng: -73.9934 },
+    description: 'Premium electronics store offering the latest gadgets and tech accessories',
+    hours: 'Mon-Fri: 9AM-8PM, Sat-Sun: 10AM-6PM',
+    rating: 4.7,
+    tags: ['electronics', 'gadgets', 'smartphones', 'laptops'],
+    source: 'user_created' as const,
+    isActive: true
+  },
+  {
+    storeName: 'Fashion Forward Boutique',
+    storeType: 'clothing',
+    address: '456 Fashion Avenue, New York, NY 10002',
+    phone: '+1-555-0456',
+    email: 'style@fashionforward.com',
+    website: 'https://fashionforward.com',
+    country: 'United States',
+    coordinates: { lat: 40.7168, lng: -73.9861 },
+    description: 'Trendy clothing boutique with the latest fashion styles',
+    hours: 'Mon-Sat: 10AM-9PM, Sun: 12PM-6PM',
+    rating: 4.5,
+    tags: ['clothing', 'fashion', 'boutique', 'trendy'],
+    source: 'user_created' as const,
+    isActive: true
+  },
+  {
+    storeName: 'Fresh Market Grocery',
+    storeType: 'supermarket',
+    address: '789 Market Street, New York, NY 10003',
+    phone: '+1-555-0789',
+    email: 'fresh@freshmarket.com',
+    website: 'https://freshmarket.com',
+    country: 'United States',
+    coordinates: { lat: 40.7295, lng: -73.9881 },
+    description: 'Fresh produce and organic groceries for health-conscious shoppers',
+    hours: 'Daily: 7AM-11PM',
+    rating: 4.3,
+    tags: ['grocery', 'organic', 'fresh', 'produce'],
+    source: 'user_created' as const,
+    isActive: true
+  },
+  {
+    storeName: 'Bookworm Corner',
+    storeType: 'books',
+    address: '321 Library Lane, New York, NY 10004',
+    phone: '+1-555-0321',
+    email: 'books@bookworm.com',
+    website: 'https://bookworm.com',
+    country: 'United States',
+    coordinates: { lat: 40.7589, lng: -73.9851 },
+    description: 'Cozy bookstore with rare books and comfortable reading areas',
+    hours: 'Mon-Sat: 9AM-10PM, Sun: 10AM-8PM',
+    rating: 4.8,
+    tags: ['books', 'bookstore', 'reading', 'rare books'],
+    source: 'user_created' as const,
+    isActive: true
+  },
+  {
+    storeName: 'Home Comfort Furniture',
+    storeType: 'furniture',
+    address: '654 Home Street, New York, NY 10005',
+    phone: '+1-555-0654',
+    email: 'comfort@homecomfort.com',
+    website: 'https://homecomfort.com',
+    country: 'United States',
+    coordinates: { lat: 40.7421, lng: -73.9911 },
+    description: 'Quality furniture for every room in your home',
+    hours: 'Mon-Fri: 10AM-8PM, Sat: 10AM-6PM, Sun: 12PM-5PM',
+    rating: 4.6,
+    tags: ['furniture', 'home', 'comfort', 'quality'],
+    source: 'user_created' as const,
+    isActive: true
+  }
+];
 
 export async function seedDatabase() {
   try {
@@ -10,142 +95,58 @@ export async function seedDatabase() {
     // Connect to MongoDB
     await connectDB();
     
-    // Clear existing data
-    await User.deleteMany({});
-    await Store.deleteMany({});
-    
-    console.log('🗑️ Cleared existing data');
-    
-    // Create admin user
-    const adminPassword = await bcrypt.hash('admin123', 12);
-    const adminUser = new User({
-      firstName: 'Admin',
-      lastName: 'User',
-      email: 'admin@storelocator.com',
-      password: adminPassword,
-      phone: '+1-555-0000',
-      businessName: 'Store Locator Admin',
-      businessType: 'technology',
-      acceptMarketing: false,
-      isActive: true,
-      role: 'admin'
-    });
-    
-    await adminUser.save();
-    console.log('👤 Created admin user');
-    
-    // Create sample business user
-    const businessPassword = await bcrypt.hash('business123', 12);
-    const businessUser = new User({
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john@techhaven.com',
-      password: businessPassword,
-      phone: '+1-555-0123',
-      businessName: 'Tech Haven',
-      businessType: 'technology',
-      acceptMarketing: true,
-      isActive: true,
-      role: 'business_owner'
-    });
-    
-    await businessUser.save();
-    console.log('👤 Created business user');
-    
-    // Create sample stores
-    const sampleStores = [
-      {
-        storeName: 'Tech Haven',
-        storeType: 'electronics',
-        address: '123 Main St, New York, NY 10001',
-        phone: '+1-555-0123',
-        email: 'info@techhaven.com',
-        website: 'https://techhaven.com',
-        country: 'United States',
-        coordinates: { lat: 40.7128, lng: -74.0060 },
-        description: 'Premium electronics and computer store',
-        hours: '9:00 AM - 9:00 PM',
-        rating: 4.5,
-        tags: ['electronics', 'computers', 'phones', 'laptops'],
-        createdBy: businessUser._id
-      },
-      {
-        storeName: 'Fashion Forward',
-        storeType: 'clothing',
-        address: '456 Oak Ave, London, UK SW1A 1AA',
-        phone: '+44-20-7946-0958',
-        email: 'hello@fashionforward.co.uk',
-        website: 'https://fashionforward.co.uk',
-        country: 'United Kingdom',
-        coordinates: { lat: 51.5074, lng: -0.1278 },
-        description: 'Trendy clothing and accessories store',
-        hours: '10:00 AM - 8:00 PM',
-        rating: 4.2,
-        tags: ['clothing', 'fashion', 'accessories', 'shoes'],
-        createdBy: businessUser._id
-      },
-      {
-        storeName: 'Fresh Market',
-        storeType: 'supermarket',
-        address: '789 Pine St, Toronto, ON M5V 2H1',
-        phone: '+1-416-555-0123',
-        email: 'contact@freshmarket.ca',
-        website: 'https://freshmarket.ca',
-        country: 'Canada',
-        coordinates: { lat: 43.6532, lng: -79.3832 },
-        description: 'Fresh groceries and organic foods',
-        hours: '7:00 AM - 11:00 PM',
-        rating: 4.7,
-        tags: ['grocery', 'organic', 'fresh', 'food'],
-        createdBy: businessUser._id
-      },
-      {
-        storeName: 'Sports Central',
-        storeType: 'sports',
-        address: '321 Sports Blvd, Los Angeles, CA 90210',
-        phone: '+1-555-0456',
-        email: 'info@sportscentral.com',
-        website: 'https://sportscentral.com',
-        country: 'United States',
-        coordinates: { lat: 34.0522, lng: -118.2437 },
-        description: 'Complete sports equipment and apparel store',
-        hours: '8:00 AM - 10:00 PM',
-        rating: 4.3,
-        tags: ['sports', 'equipment', 'fitness', 'apparel'],
-        createdBy: businessUser._id
-      },
-      {
-        storeName: 'Book Nook',
-        storeType: 'books',
-        address: '654 Reading Rd, Chicago, IL 60601',
-        phone: '+1-555-0789',
-        email: 'hello@booknook.com',
-        website: 'https://booknook.com',
-        country: 'United States',
-        coordinates: { lat: 41.8781, lng: -87.6298 },
-        description: 'Independent bookstore with rare and new books',
-        hours: '9:00 AM - 7:00 PM',
-        rating: 4.8,
-        tags: ['books', 'reading', 'literature', 'education'],
-        createdBy: businessUser._id
-      }
-    ];
-    
-    // Insert stores
-    for (const storeData of sampleStores) {
-      const store = new Store(storeData);
-      await store.save();
+    // Check if stores already exist
+    const existingStores = await Store.countDocuments();
+    if (existingStores > 0) {
+      console.log(`📚 Database already has ${existingStores} stores. Skipping seeding.`);
+      return;
     }
     
-    console.log('🏪 Created sample stores');
+    // Create a default user for the stores (or use existing)
+    let defaultUser;
+    try {
+      defaultUser = await User.findOne({ email: 'admin@storelocator.com' });
+      if (!defaultUser) {
+        console.log('👤 Creating default admin user...');
+        defaultUser = new User({
+          firstName: 'Admin',
+          lastName: 'User',
+          email: 'admin@storelocator.com',
+          password: 'admin123', // In production, use proper hashing
+          businessName: 'Store Locator Admin',
+          businessType: 'admin',
+          acceptMarketing: false,
+          isActive: true,
+          role: 'admin'
+        });
+        await defaultUser.save();
+        console.log('✅ Default admin user created');
+      }
+    } catch (error) {
+      console.log('⚠️ Could not create default user, using string ID');
+      defaultUser = 'admin_user';
+    }
     
-    console.log('✅ Database seeding completed successfully!');
-    console.log('\n📋 Sample Data Created:');
-    console.log(`👥 Users: ${await User.countDocuments()}`);
-    console.log(`🏪 Stores: ${await Store.countDocuments()}`);
-    console.log('\n🔑 Login Credentials:');
-    console.log('Admin: admin@storelocator.com / admin123');
-    console.log('Business: john@techhaven.com / business123');
+    // Create stores
+    console.log('🏪 Creating sample stores...');
+    const createdStores = await Promise.all(
+      sampleStores.map(async (storeData) => {
+        const store = new Store({
+          ...storeData,
+          createdBy: defaultUser._id || defaultUser
+        });
+        return await store.save();
+      })
+    );
+    
+    console.log(`✅ Successfully created ${createdStores.length} stores`);
+    
+    // Log created stores
+    createdStores.forEach(store => {
+      console.log(`  - ${store.storeName} (${store.storeType}) at ${store.address}`);
+    });
+    
+    console.log('🎉 Database seeding completed successfully!');
     
   } catch (error) {
     console.error('❌ Database seeding failed:', error);
@@ -153,10 +154,13 @@ export async function seedDatabase() {
   }
 }
 
-// Run seeder if called directly
+// Run seeding if this file is executed directly
 if (require.main === module) {
   seedDatabase()
-    .then(() => process.exit(0))
+    .then(() => {
+      console.log('Seeding completed');
+      process.exit(0);
+    })
     .catch((error) => {
       console.error('Seeding failed:', error);
       process.exit(1);

@@ -8,6 +8,7 @@ interface User {
   firstName: string;
   lastName: string;
   email: string;
+  role: string;
 }
 
 interface AuthContextType {
@@ -34,7 +35,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     id: 'dev-user-123',
     firstName: 'Developer',
     lastName: 'User',
-    email: 'dev@example.com'
+    email: 'dev@example.com',
+    role: 'admin' // Set as admin for development to see admin interface
   });
   const [isAuthenticated, setIsAuthenticated] = useState(true); // Always true for development
 
@@ -46,7 +48,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: 'dev-user-123',
       firstName: 'Developer',
       lastName: 'User',
-      email: 'dev@example.com'
+      email: 'dev@example.com',
+      role: 'admin'
     });
     
     // Skip token validation
@@ -61,7 +64,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: 'dev-user-123',
       firstName: 'Developer',
       lastName: 'User',
-      email: email || 'dev@example.com'
+      email: email || 'dev@example.com',
+      role: 'admin'
     });
   };
 
@@ -73,7 +77,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: 'dev-user-123',
       firstName: userData.firstName || 'Developer',
       lastName: userData.lastName || 'User',
-      email: userData.email || 'dev@example.com'
+      email: userData.email || 'dev@example.com',
+      role: 'admin'
     });
   };
 

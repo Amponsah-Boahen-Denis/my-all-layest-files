@@ -140,6 +140,76 @@
   transform: translateY(0);
 }
 
+/* Admin Dropdown Styles */
+.adminDropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.adminButton {
+  background: linear-gradient(135deg, #e53e3e, #c53030);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.adminButton:hover {
+  background: linear-gradient(135deg, #c53030, #a52727);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+}
+
+.adminMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  z-index: 1001;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+.adminDropdown:hover .adminMenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.adminLink {
+  display: block;
+  padding: 12px 16px;
+  color: #4a5568;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.adminLink:last-child {
+  border-bottom: none;
+}
+
+.adminLink:hover {
+  background: #f7fafc;
+  color: #667eea;
+  padding-left: 20px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .container {
@@ -263,5 +333,20 @@
   .loginLink:hover {
     background: #667eea;
     color: white;
+  }
+  
+  .adminMenu {
+    background: #2d3748;
+    border-color: #4a5568;
+  }
+  
+  .adminLink {
+    color: #cbd5e0;
+    border-bottom-color: #4a5568;
+  }
+  
+  .adminLink:hover {
+    background: #4a5568;
+    color: #667eea;
   }
 } 
