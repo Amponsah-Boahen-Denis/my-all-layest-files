@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import styles from './history.module.css';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface HistoryItem {
   id: string;
@@ -19,7 +20,7 @@ interface HistoryItem {
   savedAt: string;
 }
 
-export default function HistoryPage() {
+function HistoryPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -118,4 +119,14 @@ export default function HistoryPage() {
       )}
     </div>
   );
-} 
+}
+
+const ProtectedHistoryPage = () => {
+  return (
+    <ProtectedRoute>
+      <HistoryPage />
+    </ProtectedRoute>
+  );
+};
+
+export default ProtectedHistoryPage; 

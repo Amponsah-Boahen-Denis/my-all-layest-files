@@ -10,8 +10,10 @@
     "seed": "tsx src/lib/seedDatabase.ts"
   },
   "dependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "axios": "^1.6.0",
     "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "mongodb": "^6.3.0",
     "mongoose": "^8.0.0",

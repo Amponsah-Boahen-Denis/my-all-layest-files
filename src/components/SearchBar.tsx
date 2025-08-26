@@ -1,55 +1,90 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import axios from 'axios';
-import { debounce } from 'lodash';
-import sanitizeHtml from 'sanitize-html';
+import React, { useState, useEffect, useCallback } from 'react';
 import CountryInput from './CountryInput';
 import LocationAutocomplete from './LocationAutocomplete';
-import { getProductCategory } from '../utils/productCategories';
 
-// SearchBar component for searching stores by product, country, and city with optional auto-detected location
+// SearchBar component for searching stores by product, country, and city
 const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
   // Environment variable for Google Maps API key
   const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
 
   // State for user inputs and component status
   const [query, setQuery] = useState(''); // Product search query
-  const [country, setCountry] = useState(''); // Selected country (auto-detected or manual)
-  const [location, setLocation] = useState(''); // Selected city (auto-detected or manual)
+  const [country, setCountry] = useState(''); // Selected country
+  const [location, setLocation] = useState(''); // Selected city
   const [countries, setCountries] = useState<string[]>([]); // List of country names
-  const [apiError, setApiError] = useState<string | null>(null); // Error messages for API failures
+  const [apiError, setApiError] = useState<string | null>(null); // Error messages
   const [isLoading, setIsLoading] = useState(false); // Loading state for search
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false); // Location detection loading
   const [layout, setLayout] = useState('grid'); // Display layout (grid or list)
   const [isAutoDetectEnabled, setIsAutoDetectEnabled] = useState(false); // Track if auto-detection is enabled
+  const [searchHistory, setSearchHistory] = useState<string[]>([]); // Recent search queries
 
-  // Fallback country list if REST Countries API fails
+  // Fallback country list
   const fallbackCountries = [
-    'United States', 'Canada', 'United Kingdom', 'Germany', 'France',
-    'Japan', 'Australia', 'India', 'Brazil', 'South Africa',
+    'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda', 'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan',
+    'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi',
+    'Cabo Verde', 'Cambodia', 'Cameroon', 'Canada', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 'Costa Rica', 'Croatia', 'Cuba', 'Cyprus', 'Czech Republic',
+    'Democratic Republic of the Congo', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic',
+    'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia',
+    'Fiji', 'Finland', 'France',
+    'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana',
+    'Haiti', 'Honduras', 'Hungary',
+    'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy', 'Ivory Coast',
+    'Jamaica', 'Japan', 'Jordan',
+    'Kazakhstan', 'Kenya', 'Kiribati', 'Kuwait', 'Kyrgyzstan',
+    'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania', 'Luxembourg',
+    'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico', 'Micronesia', 'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar',
+    'Namibia', 'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Korea', 'North Macedonia', 'Norway',
+    'Oman',
+    'Pakistan', 'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal',
+    'Qatar',
+    'Romania', 'Russia', 'Rwanda',
+    'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Korea', 'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria',
+    'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu',
+    'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan',
+    'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam',
+    'Yemen',
+    'Zambia', 'Zimbabwe'
   ];
 
   // Check for Google API key on component mount
   useEffect(() => {
     if (!GOOGLE_API_KEY) {
       setApiError('Google API key is missing. Please configure NEXT_PUBLIC_GOOGLE_API_KEY.');
+    } else {
+      setApiError(null);
     }
   }, [GOOGLE_API_KEY]);
+
+  // Load search history from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('searchHistory');
+      if (saved) {
+        setSearchHistory(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.warn('Failed to load search history:', error);
+    }
+  }, []);
 
   // Fetch country list from REST Countries API
   useEffect(() => {
     const controller = new AbortController();
     const fetchCountries = async () => {
       try {
-        const response = await axios.get('https://restcountries.com/v3.1/all', {
+        const response = await fetch('https://restcountries.com/v3.1/all', {
           signal: controller.signal,
         });
-        const countryNames = response.data
+        const countryData = await response.json();
+        const countryNames = countryData
           .map((c: any) => c.name?.common || c.name)
           .sort();
         setCountries(countryNames);
       } catch (error) {
-        if (!axios.isCancel(error)) {
+        if (!(error instanceof Error) || error.name !== 'AbortError') {
           setApiError('Failed to load countries. Using fallback list.');
           setCountries(fallbackCountries);
         }
@@ -59,20 +94,6 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
     return () => controller.abort(); // Cleanup on unmount
   }, []);
 
-  // Fetch user layout preference from API
-  useEffect(() => {
-    const fetchUserPreferences = async () => {
-      try {
-        // TEMPORARY: Skip authentication for development
-        const response = await axios.get('/api/user-preferences');
-        setLayout(response.data.layout || 'grid');
-      } catch (error) {
-        setApiError('Failed to load preferences. Using defaults.');
-      }
-    };
-    fetchUserPreferences();
-  }, []);
-
   // Function to handle auto-detection of user's location
   const handleAutoDetect = useCallback(async () => {
     if (!navigator.geolocation) {
@@ -80,51 +101,74 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
       return;
     }
 
+    setIsDetectingLocation(true);
     setIsAutoDetectEnabled(true);
     setApiError(null);
 
-    const controller = new AbortController();
     try {
-      // Get user's coordinates
+      // Get user's coordinates using browser's free geolocation API
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
+          timeout: 15000, // 15 second timeout
+          maximumAge: 300000, // 5 minutes cache
         });
       });
 
       const { latitude, longitude } = position.coords;
 
-      // Reverse-geocode coordinates to get city and country
-      const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_API_KEY}`,
-        { signal: controller.signal }
-      );
-
-      if (response.data.status === 'OK' && response.data.results.length > 0) {
-        const components = response.data.results[0].address_components;
-        const city = components.find((c: any) => c.types.includes('locality'))?.long_name || '';
-        const countryName = components.find((c: any) => c.types.includes('country'))?.long_name || '';
+      // Successfully got coordinates - show success message
+      setApiError(null);
+      
+      // Store coordinates for potential use (you could save these to state if needed)
+      const userCoordinates = { lat: latitude, lng: longitude };
+      
+      // Show success message with coordinates
+      setApiError(`✅ Location detected! Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}. Please select your country and enter your city manually.`);
+      
+      // You could also try to get city/country from IP address as a free alternative
+      try {
+        const ipResponse = await fetch('https://ipapi.co/json/');
+        const ipData = await ipResponse.json();
         
-        if (city && countryName) {
-          setLocation(city);
-          setCountry(countryName);
-        } else {
-          setApiError('Unable to detect city or country. Please enter manually.');
-          setIsAutoDetectEnabled(false);
+        if (ipData.city && ipData.country_name) {
+          setLocation(ipData.city);
+          setCountry(ipData.country_name);
+          setApiError(`✅ Location detected! City: ${ipData.city}, Country: ${ipData.country_name}`);
         }
-      } else {
-        setApiError('Failed to detect location. Please enter manually.');
-        setIsAutoDetectEnabled(false);
+      } catch (ipError) {
+        // IP geolocation failed, but coordinates are still available
+        console.log('IP geolocation failed, but coordinates obtained successfully');
       }
+      
     } catch (error) {
-      setApiError('Failed to detect location. Please enter manually.');
+      if (error instanceof Error && error.name === 'AbortError') {
+        return; // Request was cancelled
+      }
+      
+      // Handle specific geolocation errors
+      let errorMessage = 'Failed to detect location. Please enter manually.';
+      
+      if (error instanceof GeolocationPositionError) {
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location access denied. Please enable location permissions or enter manually.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information unavailable. Please enter manually.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location detection timed out. Please try again or enter manually.';
+            break;
+        }
+      }
+      
+      setApiError(errorMessage);
       setIsAutoDetectEnabled(false);
     } finally {
-      controller.abort(); // Cleanup
+      setIsDetectingLocation(false);
     }
-  }, [GOOGLE_API_KEY]);
+  }, []);
 
   // Function to switch to manual input
   const handleUseCustomField = useCallback(() => {
@@ -134,225 +178,84 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
     setApiError(null); // Clear any auto-detection errors
   }, []);
 
-  // Extract core product name by removing common words and irrelevant characters
-  const extractProductName = useMemo(() => (input: string) => {
-    const commonWords = new Set([
-      'buy', 'find', 'shop', 'near', 'me', 'my', 'the', 'a', 'an',
-      'where', 'can', 'i', 'get', 'locate', 'find', 'search', 'for',
-      'best', 'place', 'to', 'in', 'stores', 'that', 'sell', 'purchase',
-      'looking', 'for', 'need', 'want', 'locate', 'nearby', 'around',
-    ]);
-    const words = input
-      .toLowerCase()
-      .replace(/[^\w\s]/g, '') // Remove non-alphanumeric characters except spaces
-      .split(/\s+/)
-      .filter(
-        (word) =>
-          word.length > 2 &&
-          !commonWords.has(word) &&
-          !/^[0-9.,]+$/.test(word) // Exclude numbers
-      );
-    return words.join(' ') || input;
-  }, []);
-
-  // Query MongoDB Store collection for cached store data
-  const checkMongoDB = useCallback(async (country: string, city: string, productInfo: any) => {
+  // Function to save search to history
+  const saveToSearchHistory = useCallback((searchQuery: string) => {
     try {
-      // Use the category directly from productInfo
-      const storeType = productInfo?.category || 'general';
-      const response = await axios.get('/api/stores', {
-        params: {
-          storeType,
-          address: `${city}.*${country}`, // Regex to match city and country in address
-        },
-      });
-      return response.data;
+      const newHistory = [searchQuery, ...searchHistory.filter(q => q !== searchQuery)].slice(0, 10);
+      setSearchHistory(newHistory);
+      localStorage.setItem('searchHistory', JSON.stringify(newHistory));
     } catch (error) {
-      console.error('MongoDB query failed:', error);
-      return null;
+      console.warn('Failed to save search history:', error);
     }
-  }, []);
-
-  // Save new store data to MongoDB Store collection
-  const saveToMongoDB = useCallback(async (country: string, city: string, productInfo: any, stores: any[], coordinates: any) => {
-    try {
-      const storeType = productInfo?.category || 'general';
-      // Save each store as a separate document
-      const storePromises = stores.map(store =>
-        axios.post('/api/stores', {
-          storeName: store.tags?.name || 'Unknown Store',
-          storeType,
-          address: store.address || `${city}, ${country}`,
-          phone: store.phone || null,
-          email: null, // Google Maps API typically doesn't provide email
-        })
-      );
-      await Promise.all(storePromises);
-    } catch (error) {
-      console.error('Failed to save to MongoDB:', error);
-    }
-  }, []);
-
-  // Fetch stores from Google Maps API or MongoDB cache
-  const fetchStores = useCallback(async (country: string, city: string, productInfo: any, query: string) => {
-    if (!GOOGLE_API_KEY) throw new Error('Google API key is missing');
-    // Sanitize inputs to prevent XSS
-    const sanitizedCountry = sanitizeHtml(country, { allowedTags: [] });
-    const sanitizedCity = sanitizeHtml(city, { allowedTags: [] });
-    const sanitizedQuery = sanitizeHtml(query, { allowedTags: [] });
-
-    try {
-      // Check MongoDB for cached data
-      const cachedData = await checkMongoDB(sanitizedCountry, sanitizedCity, productInfo);
-      if (cachedData?.stores?.length > 0) return cachedData;
-
-      // Geocode city and country to get coordinates
-      const geocodeResponse = await axios.get(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(sanitizedCity)},${encodeURIComponent(sanitizedCountry)}&key=${GOOGLE_API_KEY}`,
-        { timeout: 5000 }
-      );
-
-      if (geocodeResponse.data.status !== 'OK' || !geocodeResponse.data.results?.length) {
-        throw new Error('Location not found');
-      }
-
-      const { lat, lng } = geocodeResponse.data.results[0].geometry.location;
-      const radius = 5000; // Search radius in meters
-      let stores: any[] = [];
-
-      // Fetch stores from Google Maps Places API if productInfo has googleTypes
-      if (productInfo?.googleTypes) {
-        const placePromises = productInfo.googleTypes.map((type: string) =>
-          axios
-            .get(
-              `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=${type}&keyword=${encodeURIComponent(sanitizedQuery)}&key=${GOOGLE_API_KEY}`,
-              { timeout: 10000 }
-            )
-            .then((response) => ({
-              status: 'fulfilled',
-              value: response.data.status === 'OK'
-                ? response.data.results.map((place: any) => ({
-                    id: place.place_id,
-                    tags: { name: place.name, shop: type },
-                    lat: place.geometry.location.lat,
-                    lon: place.geometry.location.lng,
-                    phone: place.formatted_phone_number || null,
-                    address: place.vicinity || place.formatted_address || sanitizedCity,
-                    email: null,
-                  }))
-                : [],
-            }))
-            .catch((error) => ({ status: 'rejected', reason: error }))
-        );
-
-        const results = await Promise.allSettled(placePromises);
-        stores = results
-          .filter((result) => result.status === 'fulfilled')
-          .flatMap((result: any) => result.value);
-      }
-
-      // Remove duplicate stores by name
-      const uniqueStores: any[] = [];
-      const seenNames = new Set();
-      for (const store of stores) {
-        const name = store.tags?.name?.toLowerCase();
-        if (name && !seenNames.has(name)) {
-          seenNames.add(name);
-          uniqueStores.push(store);
-        }
-      }
-
-      // Save new stores to MongoDB and return up to 20 stores
-      if (uniqueStores.length > 0) {
-        await saveToMongoDB(sanitizedCountry, sanitizedCity, productInfo, uniqueStores, { lat, lng });
-        return { location: { lat, lng }, stores: uniqueStores.slice(0, 20) };
-      }
-
-      throw new Error('No stores found');
-    } catch (error) {
-      throw error;
-    }
-  }, [GOOGLE_API_KEY, checkMongoDB, saveToMongoDB]);
-
-  // Calculate relevance score for sorting stores
-  const calculateRelevance = useCallback((store: any, query: string) => {
-    const storeName = (store.tags?.name || '').toLowerCase();
-    const queryLower = query.toLowerCase();
-    let relevance = storeName.includes(queryLower) ? 100 : 0;
-    queryLower.split(/\s+/).forEach((word) => {
-      if (storeName.includes(word)) relevance += 20;
-      if ((store.tags?.shop || '').includes(word)) relevance += 10;
-    });
-    return relevance;
-  }, []);
+  }, [searchHistory]);
 
   // Handle form submission
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    
     // Validate inputs
-    if (!query.trim() || !country.trim() || !location.trim()) return;
+    if (!query.trim() || !country.trim() || !location.trim()) {
+      setApiError('Please fill in all required fields.');
+      return;
+    }
 
     setIsLoading(true);
     setApiError(null);
 
     try {
-      // Extract product and get category using the new system
-      const productInfo = getProductCategory(extractProductName(query));
-      if (!productInfo) {
-        setApiError('Unable to categorize this product. Please try a different search term.');
-        setIsLoading(false);
-        return;
-      }
+      // Save search query to history
+      saveToSearchHistory(query.trim());
 
-      const storeData = await fetchStores(country, location, productInfo, query);
-
-      // Format stores for onSearch, ensuring storeName and address are compulsory
-      const formattedStores = storeData.stores.map((store: any) => ({
-        id: store.id,
-        name: store.tags?.name || 'Unknown Store', // Compulsory
-        localizedName: store.tags?.name || 'Unknown Store',
-        address: store.address || `${location}, ${country}`, // Compulsory
-        phone: store.phone || null, // Optional
-        email: store.email || null, // Optional
-        coordinates: {
-          lat: store.lat || store.center?.lat || 0,
-          lon: store.lon || store.center?.lon || 0,
+      // Call the search API
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        type: store.tags?.shop || productInfo.category,
-        relevance: calculateRelevance(store, query),
-      })).sort((a: any, b: any) => b.relevance - a.relevance);
-
-      // Call onSearch with formatted results
-      onSearch({
-        query,
-        country,
-        location,
-        productCategory: productInfo.category,
-        stores: formattedStores,
-        coordinates: storeData.location || { lat: 0, lng: 0 },
-        layout,
+        body: JSON.stringify({
+          query: query.trim(),
+          country: country.trim(),
+          location: location.trim(),
+          productCategory: '', // Will be determined by the API
+          radius: 50,
+          limit: 20
+        }),
       });
-    } catch (error: any) {
-      // Handle API errors
-      setApiError(
-        error.response?.status === 429
-          ? 'Too many requests. Please try again later.'
-          : 'Failed to fetch stores. Try different terms.'
-      );
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Call onSearch with the results
+        onSearch({
+          query: data.query,
+          country: data.country,
+          location: data.location,
+          productCategory: data.productCategory,
+          stores: data.stores,
+          coordinates: data.coordinates,
+          layout: layout,
+          totalResults: data.totalResults,
+          searchSource: data.searchSource,
+        });
+      } else {
+        setApiError(data.error || 'Search failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setApiError('Search failed. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
-  }, [query, country, location, layout, onSearch, extractProductName, calculateRelevance, fetchStores]);
+  }, [query, country, location, layout, onSearch, saveToSearchHistory]);
 
   // Update layout preference
-  const handleLayoutChange = useCallback(async (newLayout: string) => {
+  const handleLayoutChange = useCallback((newLayout: string) => {
     setLayout(newLayout);
-    try {
-      // TEMPORARY: Skip authentication for development
-      await axios.put('/api/user-preferences', { layout: newLayout });
-    } catch (error) {
-      console.error('Failed to update layout preference:', error);
-    }
+  }, []);
+
+  // Handle search history item click
+  const handleHistoryItemClick = useCallback((historyItem: string) => {
+    setQuery(historyItem);
   }, []);
 
   // Render the search form
@@ -362,6 +265,26 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
         <h2>Find Stores Near You</h2>
         <p>Search for stores that sell the products you need</p>
       </div>
+      
+      {/* Search History */}
+      {searchHistory.length > 0 && (
+        <div className="search-history">
+          <h4>Recent Searches:</h4>
+          <div className="history-tags">
+            {searchHistory.map((item, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => handleHistoryItemClick(item)}
+                className="history-tag"
+                aria-label={`Search for ${item}`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       
       <form className="search-form" onSubmit={handleSubmit}>
         {/* Product Search Section */}
@@ -375,7 +298,7 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
               type="text"
               placeholder="Enter product name (e.g., laptop, coffee, shoes)"
               value={query}
-              onChange={(e) => setQuery(sanitizeHtml(e.target.value, { allowedTags: [] }))}
+              onChange={(e) => setQuery(e.target.value)}
               required
               aria-label="Product search"
               role="textbox"
@@ -396,12 +319,14 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
             <button
               type="button"
               onClick={handleAutoDetect}
-              disabled={isLoading || !GOOGLE_API_KEY || isAutoDetectEnabled}
+               disabled={isLoading || isAutoDetectEnabled || isDetectingLocation}
               aria-label="Auto-detect my location"
               className="auto-detect-btn"
             >
-              <span className="btn-icon">🌍</span>
-              Auto-Detect My Location
+              <span className="btn-icon">
+                {isDetectingLocation ? '⏳' : '🌍'}
+              </span>
+              {isDetectingLocation ? 'Detecting...' : 'Auto-Detect My Location'}
             </button>
             <button
               type="button"
@@ -477,7 +402,7 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
         <div className="form-section">
           <button 
             type="submit" 
-            disabled={isLoading || !GOOGLE_API_KEY} 
+             disabled={isLoading || isDetectingLocation} 
             aria-busy={isLoading}
             className="search-button"
           >
@@ -500,6 +425,14 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
           <div className="error-message" role="alert">
             <span className="error-icon">⚠️</span>
             {apiError}
+          </div>
+        )}
+
+        {/* API Key Status */}
+        {!GOOGLE_API_KEY && (
+          <div className="warning-message" role="alert">
+            <span className="warning-icon">🔑</span>
+            Google API key not configured. Some features may be limited.
           </div>
         )}
       </form>

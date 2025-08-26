@@ -12,23 +12,7 @@ const Navigation = () => {
   };
 
   return (
-    <>
-      {/* Development Mode Banner */}
-      <div style={{
-        background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
-        color: 'white',
-        textAlign: 'center',
-        padding: '8px',
-        fontSize: '14px',
-        fontWeight: '600',
-        position: 'sticky',
-        top: 0,
-        zIndex: 1000
-      }}>
-        🔓 DEVELOPMENT MODE: Authentication bypassed for frontend development
-      </div>
-      
-      <nav className={styles.nav}>
+    <nav className={styles.nav}>
         <div className={styles.container}>
           <Link href="/" className={styles.logo}>
             Store Locator
@@ -45,6 +29,12 @@ const Navigation = () => {
               <>
                 <Link href="/history" className={styles.link}>
                   History
+                </Link>
+                <Link href="/manage-stores" className={styles.link}>
+                  Manage Stores
+                </Link>
+                <Link href="/analytics" className={styles.link}>
+                  Analytics
                 </Link>
                 <Link href="/profile" className={styles.link}>
                   Profile
@@ -76,7 +66,7 @@ const Navigation = () => {
             {isAuthenticated ? (
               <div className={styles.userSection}>
                 <span className={styles.userName}>
-                  Welcome, {user?.firstName}!
+                  Welcome, {user?.name}!
                 </span>
                 <button onClick={handleLogout} className={styles.logoutButton}>
                   Sign Out
@@ -95,7 +85,6 @@ const Navigation = () => {
           </div>
         </div>
       </nav>
-    </>
   );
 };
 

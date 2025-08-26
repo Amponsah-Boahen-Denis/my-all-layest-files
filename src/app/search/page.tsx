@@ -39,8 +39,48 @@ export default function SearchPage() {
   const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = (results: SearchResults) => {
-    setSearchResults(results);
+  const handleSearch = async (results: SearchResults) => {
+    const startTime = performance.now();
+    
+    try {
+      setSearchResults(results);
+      
+      // Track search analytics
+      try {
+        const searchTime = Math.round(performance.now() - startTime);
+        
+        const analyticsResponse = await fetch('/api/analytics', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            searchQuery: results.query,
+            location: results.location,
+            country: results.country,
+            productCategory: results.productCategory,
+            searchResults: results.stores.length,
+            searchTime: searchTime,
+            searchSource: 'google_api', // This would be dynamic based on actual source
+            coordinates: results.coordinates,
+            sessionId: 'session_' + Date.now(), // In real app, get from auth context
+            deviceType: 'desktop', // This would be detected from user agent
+            browser: 'Chrome', // This would be detected from user agent
+            os: 'Windows' // This would be detected from user agent
+          }),
+        });
+
+        if (!analyticsResponse.ok) {
+          console.warn('Analytics tracking failed, but search completed successfully');
+        }
+      } catch (error) {
+        console.error('Error tracking analytics:', error);
+        // Don't show error to user, analytics failure shouldn't break search
+      }
+    } catch (error) {
+      console.error('Error processing search results:', error);
+      // Handle search error if needed
+    }
   };
 
   const saveToHistory = async (result: SearchResult) => {

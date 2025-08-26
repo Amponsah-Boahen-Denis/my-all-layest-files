@@ -1,0 +1,526 @@
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 18px;
+  color: #666;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.periodInfo {
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.periodInfo span {
+  background: #f8f9fa;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #e9ecef;
+}
+
+/* Filters */
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+  background: white;
+  padding: 25px;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filterGroup label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+.filterGroup input,
+.filterGroup select {
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.filterGroup input:focus,
+.filterGroup select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Metrics Grid */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 25px;
+  margin-bottom: 40px;
+}
+
+.metricCard {
+  background: white;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.metricCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.metricCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+.metricCard h3 {
+  margin: 0 0 15px 0;
+  font-size: 1.1rem;
+  color: #6c757d;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metricValue {
+  margin: 0 0 10px 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1;
+}
+
+.metricLabel {
+  font-size: 14px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Chart Sections */
+.chartSection {
+  background: white;
+  border-radius: 16px;
+  padding: 30px;
+  margin-bottom: 30px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.chartSection h2 {
+  margin: 0 0 25px 0;
+  font-size: 1.5rem;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+/* Search Source Chart */
+.sourceChart {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sourceBar {
+  display: grid;
+  grid-template-columns: 120px 1fr 80px;
+  align-items: center;
+  gap: 20px;
+}
+
+.sourceLabel {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+.sourceBarContainer {
+  height: 30px;
+  background: #f8f9fa;
+  border-radius: 15px;
+  overflow: hidden;
+  position: relative;
+}
+
+.sourceBarFill {
+  height: 100%;
+  border-radius: 15px;
+  transition: width 0.8s ease;
+  position: relative;
+}
+
+.sourceBarFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.sourceValue {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+  text-align: right;
+}
+
+/* Data Grid */
+.dataGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.dataCard {
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.dataCard h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.3rem;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.dataList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dataItem {
+  display: grid;
+  grid-template-columns: 40px 1fr 80px;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.dataItem:hover {
+  background: #e9ecef;
+  transform: translateX(5px);
+}
+
+.rank {
+  font-weight: 700;
+  color: #667eea;
+  font-size: 14px;
+}
+
+.name {
+  font-weight: 500;
+  color: #495057;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.count {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 14px;
+  text-align: right;
+}
+
+/* Category Chart */
+.categoryChart {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.categoryBar {
+  display: grid;
+  grid-template-columns: 150px 1fr 80px;
+  align-items: center;
+  gap: 20px;
+}
+
+.categoryLabel {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+  text-transform: capitalize;
+}
+
+.categoryBarContainer {
+  height: 25px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.categoryBarFill {
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.8s ease;
+  position: relative;
+}
+
+.categoryBarFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  animation: shimmer 2s infinite;
+}
+
+.categoryValue {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+  text-align: right;
+}
+
+/* Hourly Chart */
+.hourlyChart {
+  display: grid;
+  grid-template-columns: repeat(24, 1fr);
+  gap: 8px;
+  height: 200px;
+  align-items: end;
+}
+
+.hourlyBar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+}
+
+.hourlyLabel {
+  font-size: 11px;
+  color: #6c757d;
+  font-weight: 500;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+}
+
+.hourlyBarContainer {
+  width: 100%;
+  height: 100%;
+  background: #f8f9fa;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: end;
+}
+
+.hourlyBarFill {
+  width: 100%;
+  border-radius: 4px;
+  transition: height 0.8s ease;
+  position: relative;
+}
+
+.hourlyBarFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  animation: shimmer 2s infinite;
+}
+
+.hourlyValue {
+  font-size: 10px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Error Handling */
+.error {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  color: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 500;
+}
+
+.closeError {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.closeError:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .hourlyChart {
+    grid-template-columns: repeat(12, 1fr);
+  }
+  
+  .hourlyLabel {
+    writing-mode: horizontal-tb;
+    transform: none;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  
+  .title {
+    font-size: 2rem;
+  }
+  
+  .periodInfo {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .filters {
+    grid-template-columns: 1fr;
+  }
+  
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dataGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .sourceBar,
+  .categoryBar {
+    grid-template-columns: 100px 1fr 60px;
+    gap: 15px;
+  }
+  
+  .dataItem {
+    grid-template-columns: 30px 1fr 60px;
+    gap: 10px;
+  }
+  
+  .hourlyChart {
+    grid-template-columns: repeat(6, 1fr);
+    height: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chartSection,
+  .dataCard {
+    padding: 20px;
+  }
+  
+  .metricCard {
+    padding: 25px;
+  }
+  
+  .sourceBar,
+  .categoryBar {
+    grid-template-columns: 80px 1fr 50px;
+    gap: 10px;
+  }
+  
+  .dataItem {
+    grid-template-columns: 25px 1fr 50px;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  
+  .hourlyChart {
+    grid-template-columns: repeat(4, 1fr);
+    height: 120px;
+  }
+}

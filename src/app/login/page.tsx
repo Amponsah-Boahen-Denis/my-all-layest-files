@@ -1,14 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import './login.module.css';
+import styles from './login.module.css';
 
 const Login = () => {
   const router = useRouter();
-  const { login } = useAuth();
+  const searchParams = useSearchParams();
+  const { login, isAuthenticated } = useAuth();
+  
+  // Get redirect URL from query params
+  const redirectTo = searchParams.get('redirect') || '/profile';
+  const successMessage = searchParams.get('message');
+  
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push(redirectTo);
+    }
+  }, [isAuthenticated, router, redirectTo]);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -81,8 +93,8 @@ const Login = () => {
       // Use authentication context
       await login(formData.email, formData.password, formData.rememberMe);
       
-      // Redirect to profile page after successful login
-      router.push('/profile');
+      // Redirect to the intended page after successful login
+      router.push(redirectTo);
 
     } catch (error: any) {
       setErrors({ general: error.message || 'Login failed. Please try again.' });
@@ -93,26 +105,43 @@ const Login = () => {
 
   // Handle forgot password
   const handleForgotPassword = () => {
-    // This would typically open a modal or navigate to forgot password page
-    alert('Forgot password functionality would be implemented here');
+    const forgotPasswordUrl = `/forgot-password${redirectTo !== '/profile' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`;
+    router.push(forgotPasswordUrl);
   };
 
+  // Don't render if already authenticated
+  if (isAuthenticated) {
+    return null;
+  }
+
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <div className="login-header">
+    <div className={styles['login-container']}>
+      <div className={styles['login-card']}>
+        <div className={styles['login-header']}>
           <h1>Welcome Back</h1>
           <p>Sign in to your account to continue</p>
+          {redirectTo !== '/profile' && (
+            <div className={styles['redirect-notice']}>
+              <span>🔒</span>
+              You'll be redirected to {redirectTo} after login
+            </div>
+          )}
         </div>
 
+        {successMessage && (
+          <div className={styles['success-message']} role="alert">
+            {successMessage}
+          </div>
+        )}
+
         {errors.general && (
-          <div className="error-message" role="alert">
+          <div className={styles['error-message']} role="alert">
             {errors.general}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
+        <form onSubmit={handleSubmit} className={styles['login-form']}>
+          <div className={styles['form-group']}>
             <label htmlFor="email">Email Address *</label>
             <input
               type="email"
@@ -120,31 +149,31 @@ const Login = () => {
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className={errors.email ? 'error' : ''}
+              className={errors.email ? styles.error : ''}
               placeholder="Enter your email address"
               required
               autoComplete="email"
             />
-            {errors.email && <span className="error-text">{errors.email}</span>}
+            {errors.email && <span className={styles['error-text']}>{errors.email}</span>}
           </div>
 
-          <div className="form-group">
+          <div className={styles['form-group']}>
             <label htmlFor="password">Password *</label>
-            <div className="password-input-container">
+            <div className={styles['password-input-container']}>
               <input
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className={errors.password ? 'error' : ''}
+                className={errors.password ? styles.error : ''}
                 placeholder="Enter your password"
                 required
                 autoComplete="current-password"
               />
               <button
                 type="button"
-                className="password-toggle"
+                className={styles['password-toggle']}
                 onClick={togglePasswordVisibility}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
@@ -161,40 +190,40 @@ const Login = () => {
                 )}
               </button>
             </div>
-            {errors.password && <span className="error-text">{errors.password}</span>}
+            {errors.password && <span className={styles['error-text']}>{errors.password}</span>}
           </div>
 
-          <div className="form-options">
-            <label className="checkbox-label">
+          <div className={styles['form-options']}>
+            <label className={styles['checkbox-label']}>
               <input
                 type="checkbox"
                 name="rememberMe"
                 checked={formData.rememberMe}
                 onChange={handleInputChange}
               />
-              <span className="checkmark"></span>
+              <span className={styles.checkmark}></span>
               Remember me
             </label>
             
             <button
               type="button"
-              className="forgot-password"
+              className={styles['forgot-password']}
               onClick={handleForgotPassword}
             >
               Forgot password?
             </button>
           </div>
 
-          <div className="form-actions">
+          <div className={styles['form-actions']}>
             <button
               type="submit"
               disabled={isLoading}
-              className="submit-button"
+              className={styles['submit-button']}
               aria-busy={isLoading}
             >
               {isLoading ? (
                 <>
-                  <span className="spinner" aria-hidden="true"></span>
+                  <span className={styles.spinner} aria-hidden="true"></span>
                   Signing In...
                 </>
               ) : (
@@ -205,13 +234,13 @@ const Login = () => {
         </form>
 
         {/* Social Login Options */}
-        <div className="social-login">
-          <div className="divider">
+        <div className={styles['social-login']}>
+          <div className={styles.divider}>
             <span>Or continue with</span>
           </div>
           
-          <div className="social-buttons">
-            <button type="button" className="social-button google">
+          <div className={styles['social-buttons']}>
+            <button type="button" className={`${styles['social-button']} ${styles.google}`}>
               <svg width="20" height="20" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -221,7 +250,7 @@ const Login = () => {
               Continue with Google
             </button>
             
-            <button type="button" className="social-button facebook">
+            <button type="button" className={`${styles['social-button']} ${styles.facebook}`}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
               </svg>
@@ -231,10 +260,10 @@ const Login = () => {
         </div>
 
         {/* Register Link */}
-        <div className="register-link">
+        <div className={styles['register-link']}>
           <p>
             Don't have an account?{' '}
-            <Link href="/register" className="link">
+            <Link href={`/register${redirectTo !== '/profile' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} className={styles.link}>
               Sign up here
             </Link>
           </p>

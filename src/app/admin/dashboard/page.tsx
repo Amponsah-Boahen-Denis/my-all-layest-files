@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import styles from './dashboard.module.css';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface DashboardStats {
   totalUsers: number;
@@ -18,7 +19,7 @@ interface RecentActivity {
   userId?: string;
 }
 
-export default function AdminDashboard() {
+function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -229,4 +230,14 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
-} 
+}
+
+const ProtectedAdminDashboard = () => {
+  return (
+    <ProtectedRoute requiredRole="admin">
+      <AdminDashboard />
+    </ProtectedRoute>
+  );
+};
+
+export default ProtectedAdminDashboard; 

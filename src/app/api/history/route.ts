@@ -1,40 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
+import connectDB from '@/lib/mongodb';
+import SearchHistory from '@/models/SearchHistory';
 
-// Mock in-memory storage for history - in a real app this would be a database
-let mockHistory: any[] = [
-  {
-    id: '1',
-    locationId: '1',
-    name: 'Tech Haven',
-    address: 'New York, United States',
-    type: 'Tech',
-    phone: '+1-555-0123',
-    email: 'info@techhaven.com',
-    coordinates: { lat: 40.7128, lon: -74.0060 },
-    searchQuery: 'laptop',
-    savedAt: '2024-01-20T10:30:00Z'
-  },
-  {
-    id: '2',
-    locationId: '2',
-    name: 'Fashion Forward',
-    address: 'Los Angeles, United States',
-    type: 'Apparel',
-    phone: '+1-555-0456',
-    email: 'contact@fashionforward.com',
-    coordinates: { lat: 34.0522, lon: -118.2437 },
-    searchQuery: 'shirt',
-    savedAt: '2024-01-20T09:15:00Z'
-  }
-];
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // In a real app, this would filter by the authenticated user's ID
+    await connectDB();
+    
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const userId = searchParams.get('userId') || 'user123'; // Fallback for development mode
+    
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+    
+    // Fetch search history from database
+    const [history, totalItems] = await Promise.all([
+      SearchHistory.find({ userId })
+        .sort({ searchDate: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      SearchHistory.countDocuments({ userId })
+    ]);
+    
+    const totalPages = Math.ceil(totalItems / limit);
+    
     return NextResponse.json({
       success: true,
-      history: mockHistory,
-      totalItems: mockHistory.length
+      history: history.map(item => ({
+        id: item._id,
+        locationId: item._id,
+        name: item.stores[0]?.name || 'Unknown Store',
+        address: `${item.location}, ${item.country}`,
+        type: item.productCategory,
+        phone: item.stores[0]?.phone || null,
+        email: item.stores[0]?.email || null,
+        coordinates: {
+          lat: item.coordinates.lat,
+          lon: item.coordinates.lng
+        },
+        searchQuery: item.query,
+        savedAt: item.searchDate
+      })),
+      totalItems,
+      totalPages,
+      currentPage: page,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1
     });
 
   } catch (error) {
@@ -51,6 +64,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    await connectDB();
+    
     const body = await request.json();
     const { locationId, name, address, type, phone, email, coordinates, searchQuery } = body;
 
@@ -62,44 +77,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if already exists in history
-    const existingIndex = mockHistory.findIndex(item => 
-      item.locationId === locationId && item.searchQuery === searchQuery
-    );
+    // Parse address to extract location and country
+    const addressParts = address.split(', ');
+    const location = addressParts[0] || '';
+    const country = addressParts[addressParts.length - 1] || '';
 
-    if (existingIndex !== -1) {
-      // Update existing entry
-      mockHistory[existingIndex] = {
-        ...mockHistory[existingIndex],
-        savedAt: new Date().toISOString()
-      };
-    } else {
-      // Add new entry
-      const newHistoryItem = {
-        id: `history_${Date.now()}`,
-        locationId,
-        name,
-        address,
-        type,
+    // Create new search history entry
+    const newHistoryEntry = new SearchHistory({
+      userId: 'user123', // Fallback for development mode
+      query: searchQuery,
+      country: country,
+      location: location,
+      productCategory: type,
+      stores: [{
+        id: locationId,
+        name: name,
+        localizedName: name,
+        address: address,
         phone: phone || null,
         email: email || null,
-        coordinates: coordinates || null,
-        searchQuery,
-        savedAt: new Date().toISOString()
-      };
+        coordinates: {
+          lat: coordinates?.lat || 0,
+          lon: coordinates?.lng || 0
+        },
+        type: type,
+        relevance: 100
+      }],
+      coordinates: {
+        lat: coordinates?.lat || 0,
+        lng: coordinates?.lng || 0
+      },
+      layout: 'grid',
+      searchDate: new Date()
+    });
 
-      mockHistory.unshift(newHistoryItem); // Add to beginning
-    }
+    // Save to database
+    await newHistoryEntry.save();
 
-    // Limit history to 100 items
-    if (mockHistory.length > 100) {
-      mockHistory = mockHistory.slice(0, 100);
-    }
+    // Get total count for this user
+    const totalItems = await SearchHistory.countDocuments({ userId: 'user123' });
 
     return NextResponse.json({
       success: true,
       message: 'Saved to history successfully',
-      totalItems: mockHistory.length
+      totalItems
     });
 
   } catch (error) {
@@ -116,6 +137,8 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    await connectDB();
+    
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -126,20 +149,31 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const initialLength = mockHistory.length;
-    mockHistory = mockHistory.filter(item => item.id !== id);
+    // Validate ObjectId format
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return NextResponse.json(
+        { message: 'Invalid history item ID format' },
+        { status: 400 }
+      );
+    }
 
-    if (mockHistory.length === initialLength) {
+    // Delete from database
+    const deletedItem = await SearchHistory.findByIdAndDelete(id);
+
+    if (!deletedItem) {
       return NextResponse.json(
         { message: 'History item not found' },
         { status: 404 }
       );
     }
 
+    // Get updated total count
+    const totalItems = await SearchHistory.countDocuments({ userId: 'user123' });
+
     return NextResponse.json({
       success: true,
       message: 'History item deleted successfully',
-      totalItems: mockHistory.length
+      totalItems
     });
 
   } catch (error) {

@@ -75,6 +75,98 @@ export const getProductCategory = (productName: string): ProductInfo | null => {
     jewelry: {
       keywords: ['jewelry', 'jewellery', 'ring', 'necklace', 'bracelet', 'earrings', 'diamond', 'gold', 'silver', 'watch', 'rolex'],
       googleTypes: ['jewelry_store']
+    },
+
+    software: {
+      keywords: [
+        'software', 'app', 'application', 'program', 'saas', 'cloud', 'erp', 'crm',
+        'accounting software', 'antivirus', 'security software', 'web development',
+        'mobile app', 'custom software', 'it services', 'software solutions',
+        'ai software', 'ml software', 'data analytics', 'business software'
+      ],
+      googleTypes: ['point_of_interest', 'establishment']
+    },
+
+    healthcare: {
+      keywords: [
+        'hospital', 'clinic', 'doctor', 'nurse', 'dentist', 'pharmacy', 'healthcare',
+        'medical', 'surgeon', 'orthopedic', 'cardiology', 'dermatology',
+        'psychiatrist', 'optician', 'ophthalmology', 'physiotherapy',
+        'veterinary', 'mental health', 'rehab', 'therapy', 'nutritionist'
+      ],
+      googleTypes: ['hospital', 'doctor', 'dentist', 'health']
+    },
+
+    education: {
+      keywords: [
+        'school', 'college', 'university', 'academy', 'training center',
+        'coaching', 'tutoring', 'kindergarten', 'primary school', 'secondary school',
+        'online course', 'elearning', 'MOOC', 'bootcamp', 'computer training'
+      ],
+      googleTypes: ['school', 'university']
+    },
+
+    restaurant: {
+      keywords: [
+        'restaurant', 'food', 'cafe', 'coffee shop', 'bar', 'pub', 'eatery',
+        'fast food', 'pizza', 'burger', 'sandwich', 'sushi', 'chinese food',
+        'indian food', 'buffet', 'steakhouse', 'bbq', 'bakery', 'pastry shop'
+      ],
+      googleTypes: ['restaurant', 'cafe', 'bakery']
+    },
+
+    finance: {
+      keywords: [
+        'bank', 'finance', 'atm', 'insurance', 'loan', 'mortgage', 'credit',
+        'financial services', 'accounting', 'tax services', 'investment',
+        'stock broker', 'microfinance', 'credit union', 'savings'
+      ],
+      googleTypes: ['bank', 'finance']
+    },
+
+    travel: {
+      keywords: [
+        'hotel', 'resort', 'travel agency', 'tourism', 'tour guide',
+        'flight booking', 'airline', 'car rental', 'bus service',
+        'train station', 'cruise', 'visa services', 'holiday packages'
+      ],
+      googleTypes: ['travel_agency', 'lodging', 'tourist_attraction']
+    },
+
+    construction: {
+      keywords: [
+        'construction', 'builder', 'contractor', 'engineer', 'architect',
+        'real estate developer', 'civil works', 'road construction',
+        'building materials', 'cement', 'brick', 'steel', 'paint', 'tiles',
+        'plumbing', 'electrician', 'carpenter'
+      ],
+      googleTypes: ['general_contractor']
+    },
+
+    entertainment: {
+      keywords: [
+        'cinema', 'movie', 'theater', 'concert', 'music', 'festival',
+        'nightclub', 'bar', 'karaoke', 'event', 'amusement park', 'arcade',
+        'bowling', 'museum', 'zoo'
+      ],
+      googleTypes: ['movie_theater', 'night_club', 'museum', 'amusement_park']
+    },
+
+    agriculture: {
+      keywords: [
+        'farm', 'agriculture', 'tractor', 'fertilizer', 'irrigation', 'harvest',
+        'crop', 'seed', 'poultry', 'livestock', 'dairy farm', 'agro', 'fisheries',
+        'greenhouse', 'organic farming'
+      ],
+      googleTypes: ['point_of_interest', 'establishment']
+    },
+
+    logistics: {
+      keywords: [
+        'transport', 'logistics', 'shipping', 'freight', 'delivery', 'courier',
+        'warehouse', 'cargo', 'supply chain', 'trucking', 'distribution'
+      ],
+      googleTypes: ['moving_company', 'storage']
     }
   };
 

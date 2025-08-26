@@ -1,33 +1,61 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+export interface IRefreshToken {
+  tokenId: string;
+  token: string;
+  expiresAt: Date;
+  userAgent: string;
+  ipAddress: string;
+  createdAt: Date;
+}
+
 export interface IUser extends Document {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   password: string;
-  phone?: string;
-  businessName: string;
-  businessType: string;
-  acceptMarketing: boolean;
   isActive: boolean;
   role: string;
   lastLoginAt?: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+  refreshTokens?: IRefreshToken[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-const UserSchema = new Schema<IUser>({
-  firstName: {
+const RefreshTokenSchema = new Schema<IRefreshToken>({
+  tokenId: {
     type: String,
-    required: [true, 'First name is required'],
-    trim: true,
-    maxlength: [50, 'First name cannot exceed 50 characters']
+    required: true
   },
-  lastName: {
+  token: {
     type: String,
-    required: [true, 'Last name is required'],
+    required: true
+  },
+  expiresAt: {
+    type: Date,
+    required: true
+  },
+  userAgent: {
+    type: String,
+    required: true
+  },
+  ipAddress: {
+    type: String,
+    required: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+const UserSchema = new Schema<IUser>({
+  name: {
+    type: String,
+    required: [true, 'Name is required'],
     trim: true,
-    maxlength: [50, 'Last name cannot exceed 50 characters']
+    maxlength: [100, 'Name cannot exceed 100 characters']
   },
   email: {
     type: String,
@@ -42,59 +70,57 @@ const UserSchema = new Schema<IUser>({
     required: [true, 'Password is required'],
     minlength: [8, 'Password must be at least 8 characters long']
   },
-  phone: {
-    type: String,
-    trim: true,
-    match: [/^[\d\s-+()]*$/, 'Please enter a valid phone number']
-  },
-  businessName: {
-    type: String,
-    required: [true, 'Business name is required'],
-    trim: true,
-    maxlength: [100, 'Business name cannot exceed 100 characters']
-  },
-  businessType: {
-    type: String,
-    required: [true, 'Business type is required'],
-    enum: {
-      values: ['retail', 'restaurant', 'service', 'healthcare', 'education', 'entertainment', 'technology', 'automotive', 'beauty', 'home', 'sports', 'other'],
-      message: 'Please select a valid business type'
-    }
-  },
-  acceptMarketing: {
-    type: Boolean,
-    default: false
-  },
   isActive: {
     type: Boolean,
     default: true
   },
   role: {
     type: String,
-    enum: ['business_owner', 'admin', 'user'],
-    default: 'business_owner'
+    enum: ['user', 'admin'],
+    default: 'user'
   },
   lastLoginAt: {
     type: Date
-  }
+  },
+  resetPasswordToken: {
+    type: String
+  },
+  resetPasswordExpires: {
+    type: Date
+  },
+  refreshTokens: [RefreshTokenSchema]
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
 
-// Virtual for full name
-UserSchema.virtual('fullName').get(function() {
-  return `${this.firstName} ${this.lastName}`;
-});
-
 // Index for email queries
 UserSchema.index({ email: 1 });
 
-// Index for business type queries
-UserSchema.index({ businessType: 1 });
-
 // Index for active users
 UserSchema.index({ isActive: 1 });
+
+// Index for password reset tokens
+UserSchema.index({ resetPasswordToken: 1 });
+
+// Index for refresh tokens
+UserSchema.index({ 'refreshTokens.tokenId': 1 });
+
+// Method to clean expired refresh tokens
+UserSchema.methods.cleanExpiredTokens = function() {
+  if (this.refreshTokens) {
+    this.refreshTokens = this.refreshTokens.filter(
+      (token: IRefreshToken) => new Date(token.expiresAt) > new Date()
+    );
+  }
+  return this;
+};
+
+// Pre-save middleware to clean expired tokens
+UserSchema.pre('save', function(next) {
+  this.cleanExpiredTokens();
+  next();
+});
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema); 

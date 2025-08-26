@@ -1,12 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface User {
   id: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   role: string;
 }
@@ -14,9 +12,11 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (userData: any) => Promise<void>;
-  logout: () => void;
+  isLoading: boolean;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshToken: () => Promise<void>;
+  clearAuth: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,72 +29,161 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // TEMPORARY: Bypass authentication for frontend development
-  const [user, setUser] = useState<User>({
-    id: 'dev-user-123',
-    firstName: 'Developer',
-    lastName: 'User',
-    email: 'dev@example.com',
-    role: 'admin' // Set as admin for development to see admin interface
-  });
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Always true for development
+interface AuthProviderProps {
+  children: ReactNode;
+}
 
-  // TEMPORARY: Skip all authentication checks
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check for existing auth on mount
   useEffect(() => {
-    // Set authenticated state immediately for development
-    setIsAuthenticated(true);
-    setUser({
-      id: 'dev-user-123',
-      firstName: 'Developer',
-      lastName: 'User',
-      email: 'dev@example.com',
-      role: 'admin'
-    });
-    
-    // Skip token validation
-    console.log('🔓 Development mode: Authentication bypassed');
+    checkAuthStatus();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    // TEMPORARY: Always succeed for development
-    console.log('🔓 Development mode: Login bypassed');
-    setIsAuthenticated(true);
-    setUser({
-      id: 'dev-user-123',
-      firstName: 'Developer',
-      lastName: 'User',
-      email: email || 'dev@example.com',
-      role: 'admin'
-    });
+  // Check if user is authenticated
+  const checkAuthStatus = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Try to refresh token
+      await refreshToken();
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      clearAuth();
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const register = async (userData: any) => {
-    // TEMPORARY: Always succeed for development
-    console.log('🔓 Development mode: Registration bypassed');
-    setIsAuthenticated(true);
-    setUser({
-      id: 'dev-user-123',
-      firstName: userData.firstName || 'Developer',
-      lastName: userData.lastName || 'User',
-      email: userData.email || 'dev@example.com',
-      role: 'admin'
-    });
+  // Login function
+  const login = async (email: string, password: string, rememberMe: boolean = false) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, rememberMe }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      // Store access token
+      localStorage.setItem('accessToken', data.accessToken);
+      
+      // Set user state
+      setUser(data.user);
+      setIsAuthenticated(true);
+
+      // Set token expiration
+      const expiresIn = rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 7 days or 24 hours
+      const expiresAt = Date.now() + expiresIn;
+      localStorage.setItem('tokenExpiresAt', expiresAt.toString());
+
+    } catch (error: any) {
+      throw new Error(error.message || 'Login failed');
+    }
   };
 
-  const logout = () => {
-    // TEMPORARY: Don't actually logout in development mode
-    console.log('🔓 Development mode: Logout bypassed');
-    // Keep user authenticated for development
-    setIsAuthenticated(true);
+  // Logout function
+  const logout = async () => {
+    try {
+      // Call logout API to invalidate refresh token
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      });
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    } finally {
+      // Clear local auth state regardless of API call result
+      clearAuth();
+    }
   };
+
+  // Refresh access token
+  const refreshToken = async () => {
+    try {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include', // Include cookies for refresh token
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Token refresh failed');
+      }
+
+      // Update access token
+      localStorage.setItem('accessToken', data.accessToken);
+      
+      // Update user state
+      setUser(data.user);
+      setIsAuthenticated(true);
+
+      // Update token expiration
+      const expiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 days
+      localStorage.setItem('tokenExpiresAt', expiresAt.toString());
+
+    } catch (error: any) {
+      throw new Error(error.message || 'Token refresh failed');
+    }
+  };
+
+  // Clear authentication state
+  const clearAuth = () => {
+    setUser(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('tokenExpiresAt');
+  };
+
+  // Auto-refresh token before expiration
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const checkTokenExpiration = () => {
+      const expiresAt = localStorage.getItem('tokenExpiresAt');
+      if (!expiresAt) return;
+
+      const timeUntilExpiry = parseInt(expiresAt) - Date.now();
+      
+      // Refresh token 5 minutes before expiration
+      if (timeUntilExpiry <= 5 * 60 * 1000 && timeUntilExpiry > 0) {
+        refreshToken().catch(clearAuth);
+      }
+    };
+
+    // Check every minute
+    const interval = setInterval(checkTokenExpiration, 60 * 1000);
+    checkTokenExpiration(); // Check immediately
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   const value: AuthContextType = {
     user,
     isAuthenticated,
+    isLoading,
     login,
-    register,
     logout,
+    refreshToken,
+    clearAuth,
   };
 
   return (

@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const storeType = searchParams.get('storeType') || '';
     const address = searchParams.get('address') || '';
+    const country = searchParams.get('country') || '';
 
     // Build query
     let query: any = { isActive: true };
@@ -33,6 +34,11 @@ export async function GET(request: NextRequest) {
       query.address = { $regex: address, $options: 'i' };
     }
 
+    // Apply country filter
+    if (country) {
+      query.country = { $regex: country, $options: 'i' };
+    }
+
     // Calculate pagination
     const skip = (page - 1) * limit;
 
@@ -50,6 +56,7 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(totalStores / limit);
 
     return NextResponse.json({
+      success: true,
       stores,
       totalStores,
       totalPages,
@@ -61,7 +68,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching stores:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch stores' },
+      { success: false, error: 'Failed to fetch stores' },
       { status: 500 }
     );
   }
@@ -93,17 +100,56 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!storeName || !storeType || !address || !country || !createdBy) {
+    if (!storeName || !storeType || !address || !country) {
       return NextResponse.json(
-        { error: 'Store Name, Store Type, Address, Country, and Creator are required' },
+        { 
+          success: false,
+          error: 'Store Name, Store Type, Address, and Country are required' 
+        },
         { status: 400 }
       );
     }
 
-    // Validate coordinates
-    if (coordinates && (typeof coordinates.lat !== 'number' || typeof coordinates.lng !== 'number')) {
+    // Validate coordinates if provided
+    if (coordinates) {
+      if (typeof coordinates.lat !== 'number' || typeof coordinates.lng !== 'number') {
+        return NextResponse.json(
+          { 
+            success: false,
+            error: 'Invalid coordinates format. Latitude and longitude must be numbers.' 
+          },
+          { status: 400 }
+        );
+      }
+      
+      if (coordinates.lat < -90 || coordinates.lat > 90) {
+        return NextResponse.json(
+          { 
+            success: false,
+            error: 'Latitude must be between -90 and 90 degrees' 
+          },
+          { status: 400 }
+        );
+      }
+      
+      if (coordinates.lng < -180 || coordinates.lng > 180) {
+        return NextResponse.json(
+          { 
+            success: false,
+            error: 'Longitude must be between -180 and 180 degrees' 
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validate rating if provided
+    if (rating !== undefined && (rating < 0 || rating > 5)) {
       return NextResponse.json(
-        { error: 'Invalid coordinates format' },
+        { 
+          success: false,
+          error: 'Rating must be between 0 and 5' 
+        },
         { status: 400 }
       );
     }
@@ -125,7 +171,7 @@ export async function POST(request: NextRequest) {
       isActive: true,
       source: source || 'user_created',
       googlePlaceId: googlePlaceId || null,
-      createdBy
+      createdBy: createdBy || 'user123' // Fallback for development mode
     });
 
     // Save to database
@@ -135,7 +181,11 @@ export async function POST(request: NextRequest) {
     await newStore.populate('createdBy', 'firstName lastName businessName');
 
     return NextResponse.json(
-      { message: 'Store created successfully', store: newStore },
+      { 
+        success: true,
+        message: 'Store created successfully', 
+        store: newStore 
+      },
       { status: 201 }
     );
 
@@ -146,90 +196,34 @@ export async function POST(request: NextRequest) {
     if (error.name === 'ValidationError') {
       const validationErrors = Object.values(error.errors).map((err: any) => err.message);
       return NextResponse.json(
-        { error: validationErrors.join(', ') },
+        { 
+          success: false,
+          error: validationErrors.join(', ') 
+        },
         { status: 400 }
       );
     }
 
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return NextResponse.json(
+        { 
+          success: false,
+          error: `${field} already exists. Please use a different value.` 
+        },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Failed to create store' },
+      { 
+        success: false,
+        error: 'Failed to create store' 
+      },
       { status: 500 }
     );
   }
 }
 
-// PUT /api/stores/[id] - Update existing store
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    const { id } = params;
-    const body = await request.json();
-    const { storeName, storeType, address, phone, email, website, country } = body;
-
-    // Validate required fields
-    if (!storeName || !storeType || !address || !country) {
-      return NextResponse.json(
-        { error: 'Store Name, Store Type, Address, and Country are required' },
-        { status: 400 }
-      );
-    }
-
-    // Find and update store
-    const storeIndex = mockStores.findIndex(store => store.id === id);
-    if (storeIndex === -1) {
-      return NextResponse.json(
-        { error: 'Store not found' },
-        { status: 404 }
-      );
-    }
-
-    mockStores[storeIndex] = {
-      ...mockStores[storeIndex],
-      storeName,
-      storeType,
-      address,
-      phone: phone || null,
-      email: email || null,
-      website: website || null,
-      country,
-      updatedAt: new Date().toISOString(),
-    };
-
-    return NextResponse.json({
-      message: 'Store updated successfully',
-      store: mockStores[storeIndex],
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to update store' },
-      { status: 500 }
-    );
-  }
-}
-
-// DELETE /api/stores/[id] - Delete store
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    const { id } = params;
-
-    // Find and delete store
-    const storeIndex = mockStores.findIndex(store => store.id === id);
-    if (storeIndex === -1) {
-      return NextResponse.json(
-        { error: 'Store not found' },
-        { status: 404 }
-      );
-    }
-
-    const deletedStore = mockStores.splice(storeIndex, 1)[0];
-
-    return NextResponse.json({
-      message: 'Store deleted successfully',
-      store: deletedStore,
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to delete store' },
-      { status: 500 }
-    );
-  }
-} 
+// Note: PUT and DELETE operations for individual stores are handled in /api/stores/[id]/route.ts 

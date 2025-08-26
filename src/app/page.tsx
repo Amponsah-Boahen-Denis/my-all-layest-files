@@ -22,10 +22,16 @@ export default function Home() {
             Start Searching
           </button>
           <button 
-            onClick={() => router.push('/profile')}
+            onClick={() => router.push('/manage-stores')}
             className={styles.secondaryButton}
           >
             Manage Stores
+          </button>
+          <button 
+            onClick={() => router.push('/analytics')}
+            className={styles.secondaryButton}
+          >
+            View Analytics
           </button>
         </div>
       </div>
@@ -44,6 +50,14 @@ export default function Home() {
           <div className={styles.feature}>
             <h3>🏪 Store Information</h3>
             <p>Get detailed store info including contact details and coordinates</p>
+          </div>
+          <div className={styles.feature}>
+            <h3>🏪 Store Management</h3>
+            <p>Add, edit, and manage your own stores with detailed information</p>
+          </div>
+          <div className={styles.feature}>
+            <h3>📊 Analytics Dashboard</h3>
+            <p>Track search patterns and popular locations with detailed insights</p>
           </div>
           <div className={styles.feature}>
             <h3>💾 Search History</h3>

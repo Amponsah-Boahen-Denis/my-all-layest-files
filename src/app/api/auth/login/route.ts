@@ -2,20 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
+import { generateAccessToken, generateRefreshToken } from '@/lib/jwt';
+import crypto from 'crypto';
 
-// POST /api/auth/login - User login
 export async function POST(request: NextRequest) {
   try {
-    // Connect to MongoDB
     await connectDB();
     
-    const body = await request.json();
-    const { email, password, rememberMe } = body;
-
-    // Validate required fields
+    const { email, password, rememberMe } = await request.json();
+    
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { success: false, message: 'Email and password are required' },
         { status: 400 }
       );
     }
@@ -25,7 +23,7 @@ export async function POST(request: NextRequest) {
     
     if (!user) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { success: false, message: 'Invalid email or password' },
         { status: 401 }
       );
     }
@@ -33,41 +31,80 @@ export async function POST(request: NextRequest) {
     // Check if user is active
     if (!user.isActive) {
       return NextResponse.json(
-        { error: 'Account is deactivated. Please contact support.' },
+        { success: false, message: 'Account is deactivated' },
         { status: 401 }
       );
     }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    
     if (!isPasswordValid) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { success: false, message: 'Invalid email or password' },
         { status: 401 }
       );
     }
+
+    // Generate tokens
+    const accessToken = generateAccessToken({
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role
+    });
+
+    const refreshTokenId = crypto.randomBytes(32).toString('hex');
+    const refreshToken = generateRefreshToken({
+      userId: user._id.toString(),
+      tokenId: refreshTokenId
+    });
+
+    // Store refresh token in user document
+    if (!user.refreshTokens) {
+      user.refreshTokens = [];
+    }
+    
+    user.refreshTokens.push({
+      tokenId: refreshTokenId,
+      token: refreshToken,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.ip || 'unknown'
+    });
 
     // Update last login
     user.lastLoginAt = new Date();
     await user.save();
 
-    // Generate mock token (in production, use JWT)
-    const token = `mock_jwt_token_${Date.now()}_${user._id}`;
-
-    // Prepare user response (without sensitive data)
-    const { password: _, ...userResponse } = user.toObject();
-
-    return NextResponse.json({
+    // Set cookies for refresh token
+    const response = NextResponse.json({
+      success: true,
       message: 'Login successful',
-      user: userResponse,
-      token,
-      redirectTo: '/profile' // Redirect to profile/dashboard after login
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      accessToken,
+      expiresIn: rememberMe ? '7d' : '24h'
     });
+
+    // Set refresh token as HTTP-only cookie
+    response.cookies.set('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: '/'
+    });
+
+    return response;
 
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'Internal server error during login' },
+      { success: false, message: 'Login failed. Please try again.' },
       { status: 500 }
     );
   }

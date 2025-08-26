@@ -1,14 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import './register.module.css';
+import styles from './register.module.css';
 
 const Register = () => {
   const router = useRouter();
-  const { register } = useAuth();
+  const searchParams = useSearchParams();
+  const { isAuthenticated } = useAuth();
+  
+  // Get redirect URL from query params
+  const redirectTo = searchParams.get('redirect') || '/profile';
+  
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push(redirectTo);
+    }
+  }, [isAuthenticated, router, redirectTo]);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -17,9 +28,6 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    phone: '',
-    businessName: '',
-    businessType: '',
     acceptTerms: false,
     acceptMarketing: false
   });
@@ -27,39 +35,62 @@ const Register = () => {
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [success, setSuccess] = useState('');
-
-  // Business types for dropdown
-  const businessTypes = [
-    'Retail Store',
-    'Restaurant',
-    'Service Business',
-    'Healthcare',
-    'Education',
-    'Entertainment',
-    'Technology',
-    'Automotive',
-    'Beauty & Wellness',
-    'Home & Garden',
-    'Sports & Fitness',
-    'Other'
-  ];
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
 
   // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
     
     if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ ...prev, [name]: checked }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
+      
+      // Check password strength when password changes
+      if (name === 'password') {
+        setPasswordStrength(calculatePasswordStrength(value));
+      }
     }
     
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  // Toggle password visibility
+  const togglePasswordVisibility = (field: 'password' | 'confirmPassword') => {
+    if (field === 'password') {
+      setShowPassword(!showPassword);
+    } else {
+      setShowConfirmPassword(!showConfirmPassword);
+    }
+  };
+
+  // Calculate password strength
+  const calculatePasswordStrength = (password: string): number => {
+    let strength = 0;
+    
+    if (password.length >= 8) strength += 1;
+    if (/[a-z]/.test(password)) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/[0-9]/.test(password)) strength += 1;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+    
+    return strength;
+  };
+
+  // Get password strength color and text
+  const getPasswordStrengthInfo = () => {
+    const colors = ['#e53e3e', '#dd6b20', '#d69e2e', '#38a169', '#2f855a'];
+    const texts = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+    
+    return {
+      color: colors[passwordStrength - 1] || '#e2e8f0',
+      text: texts[passwordStrength - 1] || 'Enter password'
+    };
   };
 
   // Validation functions
@@ -69,13 +100,10 @@ const Register = () => {
   };
 
   const validatePassword = (password: string) => {
-    return password.length >= 8;
-  };
-
-  const validatePhone = (phone: string) => {
-    if (!phone) return true; // Phone is optional
-    const phoneRegex = /^[\d\s-+()]*$/;
-    return phoneRegex.test(phone);
+    return password.length >= 8 && 
+           /[a-z]/.test(password) && 
+           /[A-Z]/.test(password) && 
+           /[0-9]/.test(password);
   };
 
   // Form validation
@@ -88,8 +116,6 @@ const Register = () => {
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (!formData.password) newErrors.password = 'Password is required';
     if (!formData.confirmPassword) newErrors.confirmPassword = 'Please confirm your password';
-    if (!formData.businessName.trim()) newErrors.businessName = 'Business name is required';
-    if (!formData.businessType) newErrors.businessType = 'Please select a business type';
     if (!formData.acceptTerms) newErrors.acceptTerms = 'You must accept the terms and conditions';
 
     // Email validation
@@ -99,17 +125,12 @@ const Register = () => {
 
     // Password validation
     if (formData.password && !validatePassword(formData.password)) {
-      newErrors.password = 'Password must be at least 8 characters long';
+      newErrors.password = 'Password must be at least 8 characters with lowercase, uppercase, and number';
     }
 
     // Password confirmation
     if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
-    }
-
-    // Phone validation
-    if (formData.phone && !validatePhone(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
     }
 
     setErrors(newErrors);
@@ -130,39 +151,29 @@ const Register = () => {
     try {
       // Prepare data for registration
       const userData = {
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
+        name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
-        phone: formData.phone.trim() || null,
-        businessName: formData.businessName.trim(),
-        businessType: formData.businessType,
         acceptMarketing: formData.acceptMarketing
       };
 
-      // Use authentication context
-      await register(userData);
-      
-      setSuccess('Registration successful! Redirecting to login...');
-      
-      // Clear form
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        phone: '',
-        businessName: '',
-        businessType: '',
-        acceptTerms: false,
-        acceptMarketing: false
+      // Call registration API
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
       });
 
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        router.push('/login');
-      }, 2000);
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Registration failed');
+      }
+      
+      // Show success message and redirect
+      router.push(`/login?redirect=${encodeURIComponent(redirectTo)}&message=Registration successful! Please log in.`);
 
     } catch (error: any) {
       setErrors({ general: error.message || 'Registration failed. Please try again.' });
@@ -171,32 +182,41 @@ const Register = () => {
     }
   };
 
+  // Don't render if already authenticated
+  if (isAuthenticated) {
+    return null;
+  }
+
   return (
-    <div className="register-container">
-      <div className="register-card">
-        <div className="register-header">
+    <div className={styles['register-container']}>
+      <div className={styles['register-card']}>
+        <div className={styles['register-header']}>
           <h1>Create Your Account</h1>
           <p>Join thousands of businesses connecting with customers</p>
-        </div>
-
-        {success && (
-          <div className="success-message" role="alert">
-            {success}
+          {redirectTo !== '/profile' && (
+            <div className={styles['redirect-notice']}>
+              <span>🔒</span>
+              You'll be redirected to {redirectTo} after registration
           </div>
         )}
+        </div>
 
         {errors.general && (
-          <div className="error-message" role="alert">
+          <div className={styles['error-message']} role="alert">
             {errors.general}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="register-form">
+        <form onSubmit={handleSubmit} className={styles['register-form']}>
           {/* Personal Information */}
-          <div className="form-section">
-            <h2>Personal Information</h2>
-            <div className="form-row">
-              <div className="form-group">
+          <div className={styles['form-section']}>
+            <div className={styles['section-header']}>
+              <div className={styles['section-icon']}>👤</div>
+              <h2>Personal Information</h2>
+            </div>
+            
+            <div className={styles['name-row']}>
+              <div className={styles['form-group']}>
                 <label htmlFor="firstName">First Name *</label>
                 <input
                   type="text"
@@ -204,30 +224,30 @@ const Register = () => {
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleInputChange}
-                  className={errors.firstName ? 'error' : ''}
+                  className={errors.firstName ? styles.error : ''}
                   placeholder="Enter your first name"
                   required
                 />
-                {errors.firstName && <span className="error-text">{errors.firstName}</span>}
+                {errors.firstName && <span className={styles['error-text']}>{errors.firstName}</span>}
               </div>
 
-              <div className="form-group">
+              <div className={styles['form-group']}>
                 <label htmlFor="lastName">Last Name *</label>
-                <input
-                  type="text"
+              <input
+                type="text"
                   id="lastName"
                   name="lastName"
                   value={formData.lastName}
-                  onChange={handleInputChange}
-                  className={errors.lastName ? 'error' : ''}
+                onChange={handleInputChange}
+                  className={errors.lastName ? styles.error : ''}
                   placeholder="Enter your last name"
-                  required
-                />
-                {errors.lastName && <span className="error-text">{errors.lastName}</span>}
+                required
+              />
+                {errors.lastName && <span className={styles['error-text']}>{errors.lastName}</span>}
               </div>
             </div>
 
-            <div className="form-group">
+            <div className={styles['form-group']}>
               <label htmlFor="email">Email Address *</label>
               <input
                 type="email"
@@ -235,104 +255,127 @@ const Register = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className={errors.email ? 'error' : ''}
+                className={errors.email ? styles.error : ''}
                 placeholder="Enter your email address"
                 required
               />
-              {errors.email && <span className="error-text">{errors.email}</span>}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="phone">Phone Number (Optional)</label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                className={errors.phone ? 'error' : ''}
-                placeholder="Enter your phone number"
-              />
-              {errors.phone && <span className="error-text">{errors.phone}</span>}
-            </div>
-          </div>
-
-          {/* Business Information */}
-          <div className="form-section">
-            <h2>Business Information</h2>
-            <div className="form-group">
-              <label htmlFor="businessName">Business Name *</label>
-              <input
-                type="text"
-                id="businessName"
-                name="businessName"
-                value={formData.businessName}
-                onChange={handleInputChange}
-                className={errors.businessName ? 'error' : ''}
-                placeholder="Enter your business name"
-                required
-              />
-              {errors.businessName && <span className="error-text">{errors.businessName}</span>}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="businessType">Business Type *</label>
-              <select
-                id="businessType"
-                name="businessType"
-                value={formData.businessType}
-                onChange={handleInputChange}
-                className={errors.businessType ? 'error' : ''}
-                required
-              >
-                <option value="">Select your business type</option>
-                {businessTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-              {errors.businessType && <span className="error-text">{errors.businessType}</span>}
+              {errors.email && <span className={styles['error-text']}>{errors.email}</span>}
             </div>
           </div>
 
           {/* Security */}
-          <div className="form-section">
+          <div className={styles['form-section']}>
+            <div className={styles['section-header']}>
+              <div className={styles['section-icon']}>🔒</div>
             <h2>Security</h2>
-            <div className="form-group">
+            </div>
+            
+            <div className={styles['form-group']}>
               <label htmlFor="password">Password *</label>
+              <div className={styles['password-input-container']}>
               <input
-                type="password"
+                  type={showPassword ? 'text' : 'password'}
                 id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className={errors.password ? 'error' : ''}
+                  className={errors.password ? styles.error : ''}
                 placeholder="Create a strong password"
                 required
               />
-              {errors.password && <span className="error-text">{errors.password}</span>}
-              <small className="help-text">Password must be at least 8 characters long</small>
+                <button
+                  type="button"
+                  className={styles['password-toggle']}
+                  onClick={() => togglePasswordVisibility('password')}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+              
+              {/* Password strength indicator */}
+              {formData.password && (
+                <div className={styles['password-strength']}>
+                  <div className={styles['strength-bar']}>
+                    {[1, 2, 3, 4, 5].map((level) => (
+                      <div
+                        key={level}
+                        className={`${styles['strength-segment']} ${
+                          level <= passwordStrength ? styles.active : ''
+                        }`}
+                        style={{
+                          backgroundColor: level <= passwordStrength ? getPasswordStrengthInfo().color : '#e2e8f0'
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <span className={styles['strength-text']} style={{ color: getPasswordStrengthInfo().color }}>
+                    {getPasswordStrengthInfo().text}
+                  </span>
+                </div>
+              )}
+              
+              {errors.password && <span className={styles['error-text']}>{errors.password}</span>}
+              <small className={styles['help-text']}>
+                Password must be at least 8 characters with lowercase, uppercase, and number
+              </small>
             </div>
 
-            <div className="form-group">
+            <div className={styles['form-group']}>
               <label htmlFor="confirmPassword">Confirm Password *</label>
+              <div className={styles['password-input-container']}>
               <input
-                type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                 id="confirmPassword"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                className={errors.confirmPassword ? 'error' : ''}
+                  className={errors.confirmPassword ? styles.error : ''}
                 placeholder="Confirm your password"
                 required
               />
-              {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
+                <button
+                  type="button"
+                  className={styles['password-toggle']}
+                  onClick={() => togglePasswordVisibility('confirmPassword')}
+                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showConfirmPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {errors.confirmPassword && <span className={styles['error-text']}>{errors.confirmPassword}</span>}
             </div>
           </div>
 
           {/* Terms and Preferences */}
-          <div className="form-section">
-            <div className="form-group checkbox-group">
-              <label className="checkbox-label">
+          <div className={styles['form-section']}>
+            <div className={styles['section-header']}>
+              <div className={styles['section-icon']}>📋</div>
+              <h2>Terms & Preferences</h2>
+            </div>
+            
+            <div className={styles['form-group']}>
+              <label className={styles['checkbox-label']}>
                 <input
                   type="checkbox"
                   name="acceptTerms"
@@ -340,37 +383,37 @@ const Register = () => {
                   onChange={handleInputChange}
                   required
                 />
-                <span className="checkmark"></span>
-                I accept the <Link href="/terms" className="link">Terms and Conditions</Link> and <Link href="/privacy" className="link">Privacy Policy</Link> *
+                <span className={styles.checkmark}></span>
+                I accept the <Link href="/terms" className={styles.link}>Terms and Conditions</Link> and <Link href="/privacy" className={styles.link}>Privacy Policy</Link> *
               </label>
-              {errors.acceptTerms && <span className="error-text">{errors.acceptTerms}</span>}
+              {errors.acceptTerms && <span className={styles['error-text']}>{errors.acceptTerms}</span>}
             </div>
 
-            <div className="form-group checkbox-group">
-              <label className="checkbox-label">
+            <div className={styles['form-group']}>
+              <label className={styles['checkbox-label']}>
                 <input
                   type="checkbox"
                   name="acceptMarketing"
                   checked={formData.acceptMarketing}
                   onChange={handleInputChange}
                 />
-                <span className="checkmark"></span>
+                <span className={styles.checkmark}></span>
                 I would like to receive marketing communications about new features and updates
               </label>
             </div>
           </div>
 
           {/* Submit Button */}
-          <div className="form-actions">
+          <div className={styles['form-actions']}>
             <button
               type="submit"
               disabled={isLoading}
-              className="submit-button"
+              className={styles['submit-button']}
               aria-busy={isLoading}
             >
               {isLoading ? (
                 <>
-                  <span className="spinner" aria-hidden="true"></span>
+                  <span className={styles.spinner} aria-hidden="true"></span>
                   Creating Account...
                 </>
               ) : (
@@ -381,10 +424,10 @@ const Register = () => {
         </form>
 
         {/* Login Link */}
-        <div className="login-link">
+        <div className={styles['login-link']}>
           <p>
             Already have an account?{' '}
-            <Link href="/login" className="link">
+            <Link href={`/login${redirectTo !== '/profile' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} className={styles.link}>
               Sign in here
             </Link>
           </p>
