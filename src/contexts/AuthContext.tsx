@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
 
 interface User {
   id: string;
@@ -37,34 +37,92 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Check for existing auth on mount
-  useEffect(() => {
-    checkAuthStatus();
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Use refs to prevent unnecessary re-renders
+  const userRef = useRef<User | null>(null);
+  const isAuthenticatedRef = useRef(false);
+  const isLoadingRef = useRef(true);
+  
+  // Batch state updates to reduce re-renders
+  const updateAuthState = useCallback((updates: Partial<{
+    user: User | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+  }>) => {
+    if (updates.user !== undefined) {
+      setUser(updates.user);
+      userRef.current = updates.user;
+    }
+    if (updates.isAuthenticated !== undefined) {
+      setIsAuthenticated(updates.isAuthenticated);
+      isAuthenticatedRef.current = updates.isAuthenticated;
+    }
+    if (updates.isLoading !== undefined) {
+      setIsLoading(updates.isLoading);
+      isLoadingRef.current = updates.isLoading;
+    }
   }, []);
 
-  // Check if user is authenticated
-  const checkAuthStatus = async () => {
+  // Check for existing auth on mount - only once
+  useEffect(() => {
+    if (!isInitialized) {
+      checkAuthStatus();
+    }
+  }, [isInitialized]);
+
+  // Check if user is authenticated - optimized to run only once
+  const checkAuthStatus = useCallback(async () => {
     try {
       const token = localStorage.getItem('accessToken');
       
       if (!token) {
-        setIsLoading(false);
+        updateAuthState({ isLoading: false });
+        setIsInitialized(true);
         return;
       }
 
-      // Try to refresh token
+      // Check if token is expired before making API call
+      const expiresAt = localStorage.getItem('tokenExpiresAt');
+      if (expiresAt && Date.now() > parseInt(expiresAt)) {
+        // Token expired, clear auth without API call
+        clearAuth();
+        setIsInitialized(true);
+        return;
+      }
+
+      // Only refresh if token is close to expiring (within 5 minutes)
+      const timeUntilExpiry = parseInt(expiresAt || '0') - Date.now();
+      if (timeUntilExpiry > 5 * 60 * 1000) {
+        // Token still valid, just set user state
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          try {
+            const parsedUser = JSON.parse(userData);
+            updateAuthState({ user: parsedUser, isAuthenticated: true, isLoading: false });
+          } catch (e) {
+            // Invalid user data, clear it
+            clearAuth();
+          }
+        } else {
+          updateAuthState({ isLoading: false });
+        }
+        setIsInitialized(true);
+        return;
+      }
+
+      // Token needs refresh
       await refreshToken();
     } catch (error) {
       console.error('Auth check failed:', error);
       clearAuth();
     } finally {
-      setIsLoading(false);
+      setIsInitialized(true);
     }
-  };
+  }, [isInitialized, updateAuthState]);
 
-  // Login function
-  const login = async (email: string, password: string, rememberMe: boolean = false) => {
+  // Login function - optimized to reduce state updates
+  const login = useCallback(async (email: string, password: string, rememberMe: boolean = false) => {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -80,12 +138,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Store access token
+      // Store access token and user data locally
       localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('userData', JSON.stringify(data.user));
       
-      // Set user state
-      setUser(data.user);
-      setIsAuthenticated(true);
+      // Batch state updates
+      updateAuthState({
+        user: data.user,
+        isAuthenticated: true
+      });
 
       // Set token expiration
       const expiresIn = rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 7 days or 24 hours
@@ -95,10 +156,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: any) {
       throw new Error(error.message || 'Login failed');
     }
-  };
+  }, [updateAuthState]);
 
-  // Logout function
-  const logout = async () => {
+  // Logout function - optimized
+  const logout = useCallback(async () => {
     try {
       // Call logout API to invalidate refresh token
       await fetch('/api/auth/logout', {
@@ -113,10 +174,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Clear local auth state regardless of API call result
       clearAuth();
     }
-  };
+  }, []);
 
-  // Refresh access token
-  const refreshToken = async () => {
+  // Refresh access token - optimized to reduce unnecessary calls
+  const refreshToken = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/refresh', {
         method: 'POST',
@@ -131,10 +192,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Update access token
       localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('userData', JSON.stringify(data.user));
       
-      // Update user state
-      setUser(data.user);
-      setIsAuthenticated(true);
+      // Batch state updates
+      updateAuthState({
+        user: data.user,
+        isAuthenticated: true
+      });
 
       // Update token expiration
       const expiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 days
@@ -143,19 +207,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: any) {
       throw new Error(error.message || 'Token refresh failed');
     }
-  };
+  }, [updateAuthState]);
 
-  // Clear authentication state
-  const clearAuth = () => {
-    setUser(null);
-    setIsAuthenticated(false);
+  // Clear authentication state - optimized
+  const clearAuth = useCallback(() => {
+    updateAuthState({
+      user: null,
+      isAuthenticated: false
+    });
     localStorage.removeItem('accessToken');
     localStorage.removeItem('tokenExpiresAt');
-  };
+    localStorage.removeItem('userData');
+  }, [updateAuthState]);
 
-  // Auto-refresh token before expiration
+  // Auto-refresh token before expiration - optimized interval
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !isInitialized) return;
 
     const checkTokenExpiration = () => {
       const expiresAt = localStorage.getItem('tokenExpiresAt');
@@ -169,14 +236,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    // Check every minute
-    const interval = setInterval(checkTokenExpiration, 60 * 1000);
+    // Check every 5 minutes instead of every minute
+    const interval = setInterval(checkTokenExpiration, 5 * 60 * 1000);
     checkTokenExpiration(); // Check immediately
 
     return () => clearInterval(interval);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isInitialized, refreshToken, clearAuth]);
 
-  const value: AuthContextType = {
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo<AuthContextType>(() => ({
     user,
     isAuthenticated,
     isLoading,
@@ -184,7 +252,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     refreshToken,
     clearAuth,
-  };
+  }), [user, isAuthenticated, isLoading, login, logout, refreshToken, clearAuth]);
 
   return (
     <AuthContext.Provider value={value}>

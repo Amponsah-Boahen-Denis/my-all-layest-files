@@ -1,114 +1,192 @@
-# 🗺️ Google Places API Setup Guide
+# 🗺️ Google API Setup Guide
 
-## 🔑 **Step 1: Get Google API Key**
+Your Google API key has been successfully implemented! Here's what you need to know:
 
-1. **Go to [Google Cloud Console](https://console.cloud.google.com/)**
-2. **Create a new project** or select an existing one
-3. **Enable these APIs:**
-   - **Places API** - For finding nearby businesses
-   - **Geocoding API** - For converting addresses to coordinates
-   - **Maps JavaScript API** - For maps and location services
+## ✅ **What's Been Implemented**
 
-4. **Create API Key:**
-   - Go to "Credentials" section
-   - Click "Create Credentials" → "API Key"
-   - Copy your new API key
+1. **Google API Configuration** (`src/lib/googleConfig.ts`)
+   - Centralized API key management
+   - Helper functions for Google services
+   - Configuration for Places API, Geocoding, and Maps
 
-## ⚙️ **Step 2: Configure Environment Variables**
+2. **Enhanced Search API** (`src/app/api/search/route.ts`)
+   - Google Places API integration
+   - Location geocoding
+   - Hybrid search (database + Google results)
+   - Result caching
 
-Create a `.env.local` file in your project root:
+3. **Google Maps Component** (`src/components/GoogleMap.tsx`)
+   - Interactive maps with store markers
+   - Responsive design
+   - Error handling and loading states
 
-```env
-# Frontend (public) - for geolocation and autocomplete
-NEXT_PUBLIC_GOOGLE_API_KEY=your_actual_api_key_here
+4. **Location Autocomplete** (`src/components/LocationAutocomplete.tsx`)
+   - Google Places autocomplete
+   - Smart location suggestions
+   - Country-specific filtering
 
-# Backend (private) - for Places API searches
-GOOGLE_API_KEY=your_actual_api_key_here
+## 🔑 **Your Google API Key**
 
-# MongoDB Configuration
-MONGODB_URI=mongodb://localhost:27017/store-locator
+**Key**: `AIzaSyAUEB74DNf4PX4GvF9pkUIr0b1j4nIbB64`
+
+This key is now configured in the system and will be used for:
+- Google Places API (store search)
+- Google Geocoding API (address to coordinates)
+- Google Maps API (map display)
+- Google Places Autocomplete (location suggestions)
+
+## 🚀 **Features Now Available**
+
+### **Enhanced Store Search**
+- Search stores in your database
+- Find additional stores via Google Places API
+- Hybrid results with relevance scoring
+- Location-based radius search
+
+### **Interactive Maps**
+- Display store locations on Google Maps
+- Store markers with business information
+- Responsive map sizing
+- Zoom and pan functionality
+
+### **Smart Location Input**
+- Type-ahead location suggestions
+- Address autocomplete
+- Country-specific filtering
+- Accurate geocoding
+
+### **Store Management**
+- Enhanced store creation with Google Places data
+- Automatic coordinate extraction
+- Business information enrichment
+- Photo and rating integration
+
+## 📋 **Environment Variables (Optional)**
+
+If you want to use environment variables instead of the hardcoded key, create a `.env.local` file:
+
+```bash
+# Google API Configuration
+GOOGLE_API_KEY=AIzaSyAUEB74DNf4PX4GvF9pkUIr0b1j4nIbB64
+NEXT_PUBLIC_GOOGLE_API_KEY=AIzaSyAUEB74DNf4PX4GvF9pkUIr0b1j4nIbB64
+
+# Other configurations
+MONGODB_URI=mongodb://localhost:27017/locator-app
+JWT_SECRET=your-super-secret-jwt-key
 ```
 
-## 🔒 **Step 3: Secure Your API Key**
+## 🎯 **Usage Examples**
 
-1. **Restrict the API key:**
-   - Go to Google Cloud Console → Credentials
-   - Click on your API key
-   - Under "Application restrictions":
-     - Set to "HTTP referrers (websites)"
-     - Add your domain: `localhost:3000/*` (for development)
-     - Add your production domain when ready
+### **In Search Components**
+```tsx
+import { LocationAutocomplete } from '@/components/LocationAutocomplete';
 
-2. **Under "API restrictions":**
-   - Select "Restrict key"
-   - Choose only the APIs you enabled:
-     - Places API
-     - Geocoding API
-     - Maps JavaScript API
+<LocationAutocomplete
+  value={location}
+  onChange={setLocation}
+  onLocationSelect={handleLocationSelect}
+  country="US"
+  placeholder="Enter city or address..."
+/>
+```
 
-## 🚀 **Step 4: Test Your Integration**
+### **In Store Display**
+```tsx
+import GoogleMap from '@/components/GoogleMap';
 
-1. **Start your development server:**
-   ```bash
-   npm run dev
-   ```
+<GoogleMap
+  stores={searchResults}
+  height="500px"
+  showStoreMarkers={true}
+  zoom={12}
+/>
+```
 
-2. **Go to `/search` page**
-3. **Try the "Auto-Detect My Location" button**
-4. **Search for stores** - you should see results from both your database and Google Places
+### **In API Routes**
+```tsx
+import { isGoogleApiConfigured, getGoogleApiKey } from '@/lib/googleConfig';
 
-## 💰 **Step 5: Monitor Usage & Costs**
+if (isGoogleApiConfigured()) {
+  // Use Google APIs
+  const apiKey = getGoogleApiKey();
+  // ... API calls
+}
+```
 
-- **Places API**: $17 per 1000 requests
-- **Geocoding API**: $5 per 1000 requests
-- **Maps JavaScript API**: Free for basic usage
+## 🔒 **Security & Best Practices**
 
-## 🔧 **How It Works Now**
+1. **API Key Restrictions** (Recommended)
+   - Restrict key to your domain only
+   - Enable only necessary Google APIs
+   - Set up billing alerts
 
-### **Search Flow:**
-1. **User searches** for stores
-2. **API queries** your MongoDB database first
-3. **API calls** Google Places API for additional results
-4. **Results are combined** and sorted by relevance
-5. **Google results are cached** in your database for future searches
+2. **Rate Limiting**
+   - Built-in rate limiting (10 requests/minute per IP)
+   - Google's own rate limits apply
+   - Consider upgrading for production use
 
-### **Features:**
-- ✅ **Auto-location detection** using GPS + Google Geocoding
-- ✅ **Hybrid search** (database + Google Places)
-- ✅ **Smart caching** of Google results
-- ✅ **Relevance scoring** for better results
-- ✅ **Fallback to database-only** if Google API fails
+3. **Error Handling**
+   - Graceful fallbacks when Google API fails
+   - User-friendly error messages
+   - Logging for debugging
+
+## 📊 **API Quotas & Limits**
+
+- **Places API**: 1000 requests/day (free tier)
+- **Geocoding API**: 2500 requests/day (free tier)
+- **Maps JavaScript API**: 25,000 map loads/month (free tier)
+
+For production apps, consider upgrading to paid tiers.
+
+## 🧪 **Testing Your Implementation**
+
+1. **Search Functionality**
+   - Go to `/search` page
+   - Enter a location (e.g., "New York")
+   - Check for Google Places suggestions
+
+2. **Store Creation**
+   - Go to Profile & Stores
+   - Add a new store
+   - Verify Google Places integration
+
+3. **Map Display**
+   - View search results
+   - Check if Google Maps loads
+   - Verify store markers appear
 
 ## 🚨 **Troubleshooting**
 
-### **"Google API key is missing" error:**
-- Check your `.env.local` file exists
-- Verify the API key is correct
-- Restart your development server
+### **"Google API key not configured" Error**
+- Check if the key is properly set in `googleConfig.ts`
+- Verify the key is valid and not expired
+- Ensure necessary Google APIs are enabled
 
-### **"Geolocation not supported" error:**
-- Use HTTPS in production (required for geolocation)
-- Check browser permissions for location access
+### **Maps Not Loading**
+- Check browser console for errors
+- Verify API key has Maps JavaScript API enabled
+- Check network tab for failed requests
 
-### **"Google Places API error" in console:**
-- Verify your API key has Places API enabled
-- Check API quotas and billing
-- Ensure proper API restrictions are set
+### **Autocomplete Not Working**
+- Ensure Places API is enabled
+- Check for CORS issues
+- Verify API key restrictions
 
-## 📱 **Production Considerations**
+## 📞 **Support**
 
-1. **Use HTTPS** (required for geolocation)
-2. **Set proper API key restrictions** to your domain
-3. **Monitor API usage** and costs
-4. **Implement rate limiting** if needed
-5. **Add error handling** for API failures
+If you encounter issues:
+1. Check the browser console for errors
+2. Verify your Google API key is active
+3. Ensure required Google APIs are enabled
+4. Check Google Cloud Console for quota limits
 
 ## 🎉 **You're All Set!**
 
-Your search system now combines the best of both worlds:
-- **Fast database searches** for your stored stores
-- **Comprehensive Google Places results** for real-time business data
-- **Smart caching** to reduce API calls and costs
-- **Auto-location detection** for better user experience
+Your store locator app now has full Google integration with:
+- ✅ Enhanced search capabilities
+- ✅ Interactive maps
+- ✅ Smart location input
+- ✅ Business data enrichment
+- ✅ Professional user experience
 
-Happy searching! 🔍✨
+The app will automatically use Google services when available and gracefully fall back to basic functionality when needed.

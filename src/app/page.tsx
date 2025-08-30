@@ -1,89 +1,86 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import React, { Suspense, lazy } from 'react';
+import Link from 'next/link';
 import styles from './page.module.css';
 
-export default function Home() {
-  const router = useRouter();
+// Lazy load heavy components
+const SearchBar = lazy(() => import('@/components/SearchBar'));
 
+// Memoized hero section
+const HeroSection = React.memo(() => (
+  <section className={styles.hero}>
+    <div className={styles.heroContent}>
+      <h1 className={styles.heroTitle}>
+        Discover Amazing Stores Near You
+      </h1>
+      <p className={styles.heroSubtitle}>
+        Find the best local businesses, restaurants, and services in your area with our intelligent search platform. 
+        Get real-time information, reviews, and directions to make your shopping experience perfect.
+      </p>
+      <div className={styles.heroActions}>
+        <Link href="/search" className={styles.primaryButton} prefetch={false}>
+          🚀 Start Searching
+        </Link>
+        <Link href="/register" className={styles.secondaryButton} prefetch={false}>
+          ✨ Join Now
+        </Link>
+      </div>
+    </div>
+  </section>
+));
+
+HeroSection.displayName = 'HeroSection';
+
+// Memoized features section
+const FeaturesSection = React.memo(() => (
+  <section className={styles.features}>
+    <h2 className={styles.sectionTitle}>Why Choose Store Locator?</h2>
+    <p className={styles.sectionSubtitle}>
+      Experience the future of local business discovery with our cutting-edge platform
+    </p>
+    <div className={styles.featuresGrid}>
+      <div className={styles.feature}>
+        <div className={styles.featureIcon}>🔍</div>
+        <h3>Smart Search</h3>
+        <p>Find exactly what you're looking for with our AI-powered search algorithm that understands context and intent.</p>
+      </div>
+      <div className={styles.feature}>
+        <div className={styles.featureIcon}>📍</div>
+        <h3>Precise Location</h3>
+        <p>Get accurate directions and real-time location data for every store with Google Maps integration.</p>
+      </div>
+      <div className={styles.feature}>
+        <div className={styles.featureIcon}>⭐</div>
+        <h3>Verified Reviews</h3>
+        <p>Read authentic reviews from real customers to make informed decisions about where to shop.</p>
+      </div>
+      <div className={styles.feature}>
+        <div className={styles.featureIcon}>🚀</div>
+        <h3>Lightning Fast</h3>
+        <p>Experience blazing fast search results and smooth navigation optimized for performance.</p>
+      </div>
+      <div className={styles.feature}>
+        <div className={styles.featureIcon}>📱</div>
+        <h3>Mobile First</h3>
+        <p>Designed for mobile devices with responsive design that works perfectly on all screen sizes.</p>
+      </div>
+      <div className={styles.feature}>
+        <div className={styles.featureIcon}>🔒</div>
+        <h3>Secure & Private</h3>
+        <p>Your data is protected with enterprise-grade security and privacy controls.</p>
+      </div>
+    </div>
+  </section>
+));
+
+FeaturesSection.displayName = 'FeaturesSection';
+
+export default function HomePage() {
   return (
     <div className={styles.container}>
-      <div className={styles.hero}>
-        <h1 className={styles.title}>Welcome to Store Locator</h1>
-        <p className={styles.subtitle}>
-          Find stores near you with our intelligent product and location search
-        </p>
-        
-        <div className={styles.heroActions}>
-          <button 
-            onClick={() => router.push('/search')}
-            className={styles.heroButton}
-          >
-            Start Searching
-          </button>
-          <button 
-            onClick={() => router.push('/manage-stores')}
-            className={styles.secondaryButton}
-          >
-            Manage Stores
-          </button>
-          <button 
-            onClick={() => router.push('/analytics')}
-            className={styles.secondaryButton}
-          >
-            View Analytics
-          </button>
-        </div>
-      </div>
-      
-      <div className={styles.features}>
-        <h2>Features</h2>
-        <div className={styles.featureGrid}>
-          <div className={styles.feature}>
-            <h3>🔍 Smart Product Search</h3>
-            <p>Find stores by product name with intelligent categorization</p>
-          </div>
-          <div className={styles.feature}>
-            <h3>📍 Location Detection</h3>
-            <p>Auto-detect your location or search anywhere in the world</p>
-          </div>
-          <div className={styles.feature}>
-            <h3>🏪 Store Information</h3>
-            <p>Get detailed store info including contact details and coordinates</p>
-          </div>
-          <div className={styles.feature}>
-            <h3>🏪 Store Management</h3>
-            <p>Add, edit, and manage your own stores with detailed information</p>
-          </div>
-          <div className={styles.feature}>
-            <h3>📊 Analytics Dashboard</h3>
-            <p>Track search patterns and popular locations with detailed insights</p>
-          </div>
-          <div className={styles.feature}>
-            <h3>💾 Search History</h3>
-            <p>Save and manage your search results for future reference</p>
-          </div>
-          <div className={styles.feature}>
-            <h3>📱 Responsive Design</h3>
-            <p>Works perfectly on all devices - desktop, tablet, and mobile</p>
-          </div>
-          <div className={styles.feature}>
-            <h3>🌍 Global Coverage</h3>
-            <p>Search stores in any country and city worldwide</p>
-          </div>
-        </div>
-      </div>
-      
-      <div className={styles.cta}>
-        <h2>Ready to find stores?</h2>
-        <p>Start searching for products and discover stores near you!</p>
-        <button 
-          onClick={() => router.push('/search')}
-          className={styles.ctaButton}
-        >
-          Start Searching
-        </button>
-      </div>
+      <HeroSection />
+      <FeaturesSection />
     </div>
   );
 }

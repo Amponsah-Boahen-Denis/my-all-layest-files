@@ -1,8 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import styles from './analytics.module.css';
 import ProtectedRoute from '@/components/ProtectedRoute';
+
+// Lazy load heavy components
+const AnalyticsChart = lazy(() => import('./AnalyticsChart'));
+const MetricsGrid = lazy(() => import('./MetricsGrid'));
 
 interface AnalyticsData {
   period: string;
@@ -24,101 +28,59 @@ interface AnalyticsData {
   hourlyTrends: Array<{ _id: number; count: number }>;
 }
 
-function AnalyticsPage() {
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [filters, setFilters] = useState({
+// Mock data for development/testing
+const mockAnalyticsData: AnalyticsData = {
     period: '7d',
-    country: '',
-    location: '',
-    category: ''
-  });
+  startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+  endDate: new Date().toISOString(),
+  popularQueries: [
+    { _id: 'electronics', count: 1250 },
+    { _id: 'restaurants', count: 980 },
+    { _id: 'clothing', count: 756 },
+    { _id: 'pharmacy', count: 432 },
+    { _id: 'supermarket', count: 389 }
+  ],
+  popularLocations: [
+    { _id: { location: 'New York', country: 'USA' }, count: 2340 },
+    { _id: { location: 'London', country: 'UK' }, count: 1890 },
+    { _id: { location: 'Tokyo', country: 'Japan' }, count: 1567 },
+    { _id: { location: 'Paris', country: 'France' }, count: 1234 },
+    { _id: { location: 'Sydney', country: 'Australia' }, count: 987 }
+  ],
+  popularCategories: [
+    { _id: 'electronics', count: 1250 },
+    { _id: 'restaurants', count: 980 },
+    { _id: 'clothing', count: 756 },
+    { _id: 'pharmacy', count: 432 },
+    { _id: 'supermarket', count: 389 }
+  ],
+  performanceMetrics: {
+    totalSearches: 5432,
+    avgSearchTime: 245,
+    avgResults: 12.5,
+    cacheHits: 3245,
+    databaseHits: 1567,
+    googleApiHits: 620
+  },
+  deviceStats: [
+    { _id: 'desktop', count: 3245 },
+    { _id: 'mobile', count: 1890 },
+    { _id: 'tablet', count: 297 }
+  ],
+  browserStats: [
+    { _id: 'Chrome', count: 2987 },
+    { _id: 'Safari', count: 1234 },
+    { _id: 'Firefox', count: 876 },
+    { _id: 'Edge', count: 335 }
+  ],
+  hourlyTrends: Array.from({ length: 24 }, (_, i) => ({
+    _id: i,
+    count: Math.floor(Math.random() * 200) + 50
+  }))
+};
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [filters]);
-
-  const fetchAnalytics = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        period: filters.period,
-        ...(filters.country && { country: filters.country }),
-        ...(filters.location && { location: filters.location }),
-        ...(filters.category && { category: filters.category })
-      });
-
-      const response = await fetch(`/api/analytics?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        setAnalyticsData(data);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Failed to fetch analytics');
-      }
-    } catch (error) {
-      console.error('Error fetching analytics:', error);
-      setError('Failed to fetch analytics');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toString();
-  };
-
-  const formatTime = (ms: number) => {
-    if (ms < 1000) return `${ms.toFixed(0)}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
-  };
-
-  const getHourLabel = (hour: number) => {
-    const period = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${displayHour}${period}`;
-  };
-
-  if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Loading analytics...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.error}>
-          {error}
-          <button onClick={() => setError('')} className={styles.closeError}>×</button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!analyticsData) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.error}>No analytics data available</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.container}>
-      {/* Development Mode Indicator */}
+// Memoized development mode indicator
+const DevelopmentModeIndicator = React.memo(() => (
       <div style={{
         background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
         color: 'white',
@@ -132,23 +94,46 @@ function AnalyticsPage() {
       }}>
         🔓 DEVELOPMENT MODE: All features accessible without authentication
       </div>
+));
 
+DevelopmentModeIndicator.displayName = 'DevelopmentModeIndicator';
+
+// Memoized header section
+const HeaderSection = React.memo(({ 
+  filters, 
+  analyticsData 
+}: { 
+  filters: any; 
+  analyticsData: AnalyticsData | null;
+}) => (
       <div className={styles.header}>
         <h1 className={styles.title}>Search Analytics Dashboard</h1>
+    {analyticsData && (
         <div className={styles.periodInfo}>
           <span>Period: {filters.period}</span>
           <span>From: {new Date(analyticsData.startDate).toLocaleDateString()}</span>
           <span>To: {new Date(analyticsData.endDate).toLocaleDateString()}</span>
         </div>
+    )}
       </div>
+));
 
-      {/* Filters */}
+HeaderSection.displayName = 'HeaderSection';
+
+// Memoized filters section
+const FiltersSection = React.memo(({ 
+  filters, 
+  onFilterChange 
+}: { 
+  filters: any; 
+  onFilterChange: (key: string, value: string) => void;
+}) => (
       <div className={styles.filters}>
         <div className={styles.filterGroup}>
           <label>Time Period:</label>
           <select
             value={filters.period}
-            onChange={(e) => handleFilterChange('period', e.target.value)}
+        onChange={(e) => onFilterChange('period', e.target.value)}
           >
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
@@ -163,7 +148,7 @@ function AnalyticsPage() {
             type="text"
             placeholder="Filter by country"
             value={filters.country}
-            onChange={(e) => handleFilterChange('country', e.target.value)}
+        onChange={(e) => onFilterChange('country', e.target.value)}
           />
         </div>
 
@@ -173,7 +158,7 @@ function AnalyticsPage() {
             type="text"
             placeholder="Filter by location"
             value={filters.location}
-            onChange={(e) => handleFilterChange('location', e.target.value)}
+        onChange={(e) => onFilterChange('location', e.target.value)}
           />
         </div>
 
@@ -183,189 +168,135 @@ function AnalyticsPage() {
             type="text"
             placeholder="Filter by category"
             value={filters.category}
-            onChange={(e) => handleFilterChange('category', e.target.value)}
+        onChange={(e) => onFilterChange('category', e.target.value)}
           />
         </div>
       </div>
+));
+
+FiltersSection.displayName = 'FiltersSection';
+
+function AnalyticsPage() {
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [useMockData, setUseMockData] = useState(false);
+  const [filters, setFilters] = useState({
+    period: '7d',
+    country: '',
+    location: '',
+    category: ''
+  });
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [filters]);
+
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const params = new URLSearchParams({
+        period: filters.period,
+        ...(filters.country && { country: filters.country }),
+        ...(filters.location && { location: filters.location }),
+        ...(filters.category && { category: filters.category })
+      });
+
+      const response = await fetch(`/api/analytics?${params}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.performanceMetrics) {
+          setAnalyticsData(data);
+          setUseMockData(false);
+        } else {
+          // API returned empty data, use mock data
+          setAnalyticsData(mockAnalyticsData);
+          setUseMockData(true);
+        }
+      } else {
+        // API error, use mock data
+        setAnalyticsData(mockAnalyticsData);
+        setUseMockData(true);
+        console.warn('Analytics API error, using mock data');
+      }
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      // Network error, use mock data
+      setAnalyticsData(mockAnalyticsData);
+      setUseMockData(true);
+      setError('Using mock data due to connection issues');
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
+  const handleFilterChange = useCallback((key: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  }, []);
+
+  const formatNumber = useCallback((num: number) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+  }, []);
+
+  const formatTime = useCallback((ms: number) => {
+    if (ms < 1000) return `${ms.toFixed(0)}ms`;
+    return `${(ms / 1000).toFixed(2)}s`;
+  }, []);
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loading}>Loading analytics...</div>
+            </div>
+    );
+  }
+
+  if (!analyticsData) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.error}>No analytics data available</div>
+            </div>
+    );
+  }
+
+  return (
+    <div className={styles.container}>
+      <DevelopmentModeIndicator />
+      
+      {useMockData && (
+        <div className={styles.mockDataWarning}>
+          ⚠️ Using mock data for demonstration. Connect to database for real analytics.
+              </div>
+      )}
+
+      <HeaderSection filters={filters} analyticsData={analyticsData} />
+
+      <FiltersSection filters={filters} onFilterChange={handleFilterChange} />
 
       {/* Performance Metrics */}
-      <div className={styles.metricsGrid}>
-        <div className={styles.metricCard}>
-          <h3>Total Searches</h3>
-          <p className={styles.metricValue}>{formatNumber(analyticsData.performanceMetrics.totalSearches)}</p>
-          <span className={styles.metricLabel}>Total search queries</span>
-        </div>
+      <Suspense fallback={<div className={styles.loading}>Loading metrics...</div>}>
+        <MetricsGrid 
+          performanceMetrics={analyticsData.performanceMetrics}
+          formatNumber={formatNumber}
+          formatTime={formatTime}
+        />
+      </Suspense>
 
-        <div className={styles.metricCard}>
-          <h3>Avg Search Time</h3>
-          <p className={styles.metricValue}>{formatTime(analyticsData.performanceMetrics.avgSearchTime)}</p>
-          <span className={styles.metricLabel}>Average response time</span>
-        </div>
-
-        <div className={styles.metricCard}>
-          <h3>Avg Results</h3>
-          <p className={styles.metricValue}>{analyticsData.performanceMetrics.avgResults.toFixed(1)}</p>
-          <span className={styles.metricLabel}>Average results per search</span>
-        </div>
-
-        <div className={styles.metricCard}>
-          <h3>Cache Hit Rate</h3>
-          <p className={styles.metricValue}>
-            {((analyticsData.performanceMetrics.cacheHits / analyticsData.performanceMetrics.totalSearches) * 100).toFixed(1)}%
-          </p>
-          <span className={styles.metricLabel}>Searches served from cache</span>
-        </div>
-      </div>
-
-      {/* Search Source Distribution */}
-      <div className={styles.chartSection}>
-        <h2>Search Source Distribution</h2>
-        <div className={styles.sourceChart}>
-          <div className={styles.sourceBar}>
-            <div className={styles.sourceLabel}>Cache</div>
-            <div className={styles.sourceBarContainer}>
-              <div 
-                className={styles.sourceBarFill}
-                style={{
-                  width: `${(analyticsData.performanceMetrics.cacheHits / analyticsData.performanceMetrics.totalSearches) * 100}%`,
-                  background: '#51cf66'
-                }}
-              ></div>
-            </div>
-            <div className={styles.sourceValue}>{analyticsData.performanceMetrics.cacheHits}</div>
-          </div>
-
-          <div className={styles.sourceBar}>
-            <div className={styles.sourceLabel}>Database</div>
-            <div className={styles.sourceBarContainer}>
-              <div 
-                className={styles.sourceBarFill}
-                style={{
-                  width: `${(analyticsData.performanceMetrics.databaseHits / analyticsData.performanceMetrics.totalSearches) * 100}%`,
-                  background: '#17a2b8'
-                }}
-              ></div>
-            </div>
-            <div className={styles.sourceValue}>{analyticsData.performanceMetrics.databaseHits}</div>
-          </div>
-
-          <div className={styles.sourceBar}>
-            <div className={styles.sourceLabel}>Google API</div>
-            <div className={styles.sourceBarContainer}>
-              <div 
-                className={styles.sourceBarFill}
-                style={{
-                  width: `${(analyticsData.performanceMetrics.googleApiHits / analyticsData.performanceMetrics.totalSearches) * 100}%`,
-                  background: '#ffc107'
-                }}
-              ></div>
-            </div>
-            <div className={styles.sourceValue}>{analyticsData.performanceMetrics.googleApiHits}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Popular Searches and Locations */}
-      <div className={styles.dataGrid}>
-        <div className={styles.dataCard}>
-          <h3>Popular Search Queries</h3>
-          <div className={styles.dataList}>
-            {analyticsData.popularQueries.slice(0, 10).map((query, index) => (
-              <div key={query._id} className={styles.dataItem}>
-                <span className={styles.rank}>#{index + 1}</span>
-                <span className={styles.name}>{query._id}</span>
-                <span className={styles.count}>{formatNumber(query.count)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className={styles.dataCard}>
-          <h3>Popular Locations</h3>
-          <div className={styles.dataList}>
-            {analyticsData.popularLocations.slice(0, 10).map((location, index) => (
-              <div key={`${location._id.location}-${location._id.country}`} className={styles.dataItem}>
-                <span className={styles.rank}>#{index + 1}</span>
-                <span className={styles.name}>
-                  {location._id.location}, {location._id.country}
-                </span>
-                <span className={styles.count}>{formatNumber(location.count)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Popular Categories */}
-      <div className={styles.chartSection}>
-        <h2>Popular Product Categories</h2>
-        <div className={styles.categoryChart}>
-          {analyticsData.popularCategories.slice(0, 8).map((category, index) => (
-            <div key={category._id} className={styles.categoryBar}>
-              <div className={styles.categoryLabel}>{category._id}</div>
-              <div className={styles.categoryBarContainer}>
-                <div 
-                  className={styles.categoryBarFill}
-                  style={{
-                    width: `${(category.count / analyticsData.popularCategories[0].count) * 100}%`,
-                    background: `hsl(${200 + index * 30}, 70%, 60%)`
-                  }}
-                ></div>
-              </div>
-              <div className={styles.categoryValue}>{formatNumber(category.count)}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Hourly Trends */}
-      <div className={styles.chartSection}>
-        <h2>Search Activity by Hour</h2>
-        <div className={styles.hourlyChart}>
-          {analyticsData.hourlyTrends.map((hour) => (
-            <div key={hour._id} className={styles.hourlyBar}>
-              <div className={styles.hourlyLabel}>{getHourLabel(hour._id)}</div>
-              <div className={styles.hourlyBarContainer}>
-                <div 
-                  className={styles.hourlyBarFill}
-                  style={{
-                    height: `${(hour.count / Math.max(...analyticsData.hourlyTrends.map(h => h.count))) * 100}%`,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                  }}
-                ></div>
-              </div>
-              <div className={styles.hourlyValue}>{hour.count}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Device and Browser Stats */}
-      <div className={styles.dataGrid}>
-        <div className={styles.dataCard}>
-          <h3>Device Types</h3>
-          <div className={styles.dataList}>
-            {analyticsData.deviceStats.map((device) => (
-              <div key={device._id || 'Unknown'} className={styles.dataItem}>
-                <span className={styles.name}>{device._id || 'Unknown'}</span>
-                <span className={styles.count}>{formatNumber(device.count)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className={styles.dataCard}>
-          <h3>Browser Usage</h3>
-          <div className={styles.dataList}>
-            {analyticsData.browserStats.slice(0, 8).map((browser) => (
-              <div key={browser._id || 'Unknown'} className={styles.dataItem}>
-                <span className={styles.name}>{browser._id || 'Unknown'}</span>
-                <span className={styles.count}>{formatNumber(browser.count)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Charts and Data */}
+      <Suspense fallback={<div className={styles.loading}>Loading charts...</div>}>
+        <AnalyticsChart 
+          analyticsData={analyticsData}
+          formatNumber={formatNumber}
+        />
+      </Suspense>
     </div>
   );
 }

@@ -101,7 +101,7 @@ function HistoryPage() {
               
               {item.coordinates && (
                 <p className={styles.coordinates}>
-                  📍 {item.coordinates.lat.toFixed(4)}, {item.coordinates.lon.toFixed(4)}
+                  📍 {item.coordinates.lat.toFixed(4)}, {item.coordinates.lng.toFixed(4)}
                 </p>
               )}
               

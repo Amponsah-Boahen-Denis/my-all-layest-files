@@ -3,11 +3,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import CountryInput from './CountryInput';
 import LocationAutocomplete from './LocationAutocomplete';
+import { getGoogleApiKey, isGoogleApiConfigured } from '@/lib/googleConfig';
 
 // SearchBar component for searching stores by product, country, and city
 const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
-  // Environment variable for Google Maps API key
-  const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+  // Get Google API key from centralized configuration
+  const GOOGLE_API_KEY = getGoogleApiKey();
+  const isGoogleConfigured = isGoogleApiConfigured();
 
   // State for user inputs and component status
   const [query, setQuery] = useState(''); // Product search query
@@ -51,12 +53,12 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
 
   // Check for Google API key on component mount
   useEffect(() => {
-    if (!GOOGLE_API_KEY) {
-      setApiError('Google API key is missing. Please configure NEXT_PUBLIC_GOOGLE_API_KEY.');
+    if (!isGoogleConfigured) {
+      setApiError('Google API key is missing. Please configure Google API key.');
     } else {
       setApiError(null);
     }
-  }, [GOOGLE_API_KEY]);
+  }, [isGoogleConfigured]);
 
   // Load search history from localStorage
   useEffect(() => {
@@ -70,28 +72,9 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
     }
   }, []);
 
-  // Fetch country list from REST Countries API
+  // Use fallback countries for now to avoid API issues
   useEffect(() => {
-    const controller = new AbortController();
-    const fetchCountries = async () => {
-      try {
-        const response = await fetch('https://restcountries.com/v3.1/all', {
-          signal: controller.signal,
-        });
-        const countryData = await response.json();
-        const countryNames = countryData
-          .map((c: any) => c.name?.common || c.name)
-          .sort();
-        setCountries(countryNames);
-      } catch (error) {
-        if (!(error instanceof Error) || error.name !== 'AbortError') {
-          setApiError('Failed to load countries. Using fallback list.');
-          setCountries(fallbackCountries);
-        }
-      }
-    };
-    fetchCountries();
-    return () => controller.abort(); // Cleanup on unmount
+    setCountries(fallbackCountries);
   }, []);
 
   // Function to handle auto-detection of user's location
@@ -225,7 +208,7 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Call onSearch with the results
+        // Call onSearch with the results - only pass expected properties
         onSearch({
           query: data.query,
           country: data.country,
@@ -319,7 +302,7 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
             <button
               type="button"
               onClick={handleAutoDetect}
-               disabled={isLoading || isAutoDetectEnabled || isDetectingLocation}
+              disabled={isLoading || isAutoDetectEnabled || isDetectingLocation}
               aria-label="Auto-detect my location"
               className="auto-detect-btn"
             >
@@ -359,20 +342,13 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
             />
 
             <LocationAutocomplete
-              location={location}
-              setLocation={setLocation}
-              country={country}
-              translations={{
-                placeholderCountry: 'Select your country',
-                placeholderCity: 'Enter city name',
-                buttonSearch: 'Search Stores',
-                buttonSearching: 'Searching...',
-                errorQuota: 'Too many requests. Please try again later.',
-                errorNoStores: 'Failed to fetch stores. Try different terms.',
-                grid: 'Grid',
-                list: 'List',
+              value={location}
+              onChange={setLocation}
+              onLocationSelect={(locationData) => {
+                setLocation(locationData.description);
               }}
-              GOOGLE_API_KEY={GOOGLE_API_KEY || ''}
+              country={country}
+              placeholder="Enter city name"
             />
           </div>
         </div>
@@ -402,7 +378,7 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
         <div className="form-section">
           <button 
             type="submit" 
-             disabled={isLoading || isDetectingLocation} 
+            disabled={isLoading || isDetectingLocation} 
             aria-busy={isLoading}
             className="search-button"
           >
@@ -429,7 +405,7 @@ const SearchBar = ({ onSearch }: { onSearch: (results: any) => void }) => {
         )}
 
         {/* API Key Status */}
-        {!GOOGLE_API_KEY && (
+        {!isGoogleConfigured && (
           <div className="warning-message" role="alert">
             <span className="warning-icon">🔑</span>
             Google API key not configured. Some features may be limited.

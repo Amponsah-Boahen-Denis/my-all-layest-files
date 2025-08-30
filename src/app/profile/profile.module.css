@@ -1,70 +1,68 @@
 /* Profile Page Styles */
 
 .container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  max-width: 1400px;
+  margin: 0 auto;
   padding: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.profileCard {
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 30px;
+  align-items: start;
+}
+
+/* Profile Section */
+.profileSection {
   background: white;
   border-radius: 20px;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
-  width: 100%;
-  max-width: 600px;
-  position: relative;
+  padding: 30px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  position: sticky;
+  top: 20px;
 }
 
-.profileCard::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #667eea, #764ba2);
-}
-
-.header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 40px;
+.profileHeader {
   text-align: center;
-  position: relative;
+  margin-bottom: 30px;
+  padding-bottom: 25px;
+  border-bottom: 2px solid #f8f9fa;
 }
 
 .avatar {
   width: 80px;
   height: 80px;
-  background: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
-  font-weight: 700;
   margin: 0 auto 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-}
-
-.name {
   font-size: 2rem;
   font-weight: 700;
-  margin: 0 0 8px 0;
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
-.email {
-  font-size: 1.1rem;
-  margin: 0 0 16px 0;
-  opacity: 0.9;
+.userInfo h1 {
+  margin: 0 0 10px 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1a1a1a;
 }
 
-.role {
-  background: rgba(255, 255, 255, 0.2);
+.userInfo .email {
+  margin: 0 0 15px 0;
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.userInfo .role {
+  background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+  color: white;
   padding: 6px 16px;
   border-radius: 20px;
   font-size: 0.9rem;
@@ -73,51 +71,56 @@
   letter-spacing: 0.5px;
 }
 
-.content {
-  padding: 40px;
-}
-
+/* Sections */
 .section {
-  margin-bottom: 32px;
-}
-
-.section:last-child {
-  margin-bottom: 0;
+  margin-bottom: 30px;
 }
 
 .section h2 {
-  color: #2d3748;
-  font-size: 1.4rem;
-  font-weight: 600;
   margin: 0 0 20px 0;
+  font-size: 1.3rem;
+  color: #1a1a1a;
+  font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
+.section h2::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 2px;
+}
+
+/* Account Information */
 .infoGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .infoItem {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
 }
 
 .infoItem label {
-  color: #718096;
+  font-weight: 600;
+  color: #495057;
   font-size: 0.9rem;
-  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .infoItem span {
-  color: #2d3748;
-  font-size: 1rem;
+  color: #1a1a1a;
   font-weight: 500;
 }
 
@@ -125,91 +128,260 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 4px 12px;
-  border-radius: 12px;
+  border-radius: 15px;
   font-size: 0.8rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: inline-block;
-  width: fit-content;
 }
 
 .userId {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.85rem;
-  color: #718096;
-  background: #f7fafc;
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid #e2e8f0;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: #6c757d;
 }
 
+/* Quick Actions */
 .actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .actionButton {
-  background: #f7fafc;
-  border: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 20px;
+  background: white;
+  border: 2px solid #e9ecef;
   border-radius: 12px;
-  padding: 16px;
   font-size: 1rem;
   font-weight: 600;
-  color: #4a5568;
+  color: #495057;
   cursor: pointer;
   transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  min-height: 80px;
+  text-align: left;
 }
 
 .actionButton:hover {
-  background: #edf2f7;
-  border-color: #cbd5e0;
+  border-color: #667eea;
+  background: #f8f9ff;
   transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+}
+
+.actionButton span {
+  font-size: 1.2rem;
+}
+
+.logoutButton {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
+.logoutButton:hover {
+  border-color: #ff6b6b;
+  background: #fff5f5;
+  color: #ff6b6b;
+}
+
+/* Store Section */
+.storeSection {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.storeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f8f9fa;
+}
+
+.storeHeaderLeft h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.8rem;
+  color: #1a1a1a;
+  font-weight: 700;
+}
+
+.storeCount {
+  margin: 0;
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.addStoreButton {
+  background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.addStoreButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(81, 207, 102, 0.3);
+}
+
+/* Store Statistics */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.statCard {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
-.actionButton span:first-child {
+.statCard h3 {
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statValue {
+  margin: 0 0 8px 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.statLabel {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Store Management */
+.storesContainer {
+  margin-top: 30px;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 18px;
+  color: #666;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.emptyState h3 {
+  margin: 0 0 15px 0;
   font-size: 1.5rem;
+  color: #1a1a1a;
 }
 
-.actionButton.logoutButton {
-  background: #fed7d7;
-  border-color: #feb2b2;
-  color: #c53030;
+.emptyState p {
+  margin: 0 0 25px 0;
+  font-size: 1rem;
 }
 
-.actionButton.logoutButton:hover {
-  background: #feb2b2;
-  border-color: #fc8181;
-  color: #742a2a;
+.addFirstStoreButton {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.addFirstStoreButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.storesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 25px;
 }
 
 /* Responsive Design */
+@media (max-width: 1200px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .profileSection {
+    position: static;
+  }
+}
+
 @media (max-width: 768px) {
   .container {
-    padding: 10px;
+    padding: 15px;
   }
   
-  .profileCard {
-    border-radius: 16px;
+  .profileSection,
+  .storeSection {
+    padding: 20px;
   }
   
-  .header {
-    padding: 30px 20px;
+  .storeHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
   }
   
-  .content {
-    padding: 30px 20px;
+  .addStoreButton {
+    align-self: stretch;
   }
   
-  .name {
-    font-size: 1.8rem;
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .storesGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .actions {
+    gap: 10px;
+  }
+  
+  .actionButton {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .profileSection,
+  .storeSection {
+    padding: 15px;
   }
   
   .avatar {
@@ -218,42 +390,16 @@
     font-size: 1.5rem;
   }
   
-  .infoGrid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+  .userInfo h1 {
+    font-size: 1.5rem;
   }
   
-  .actions {
-    grid-template-columns: 1fr;
-    gap: 12px;
+  .storeHeaderLeft h2 {
+    font-size: 1.5rem;
   }
   
-  .actionButton {
-    min-height: 70px;
-    padding: 14px;
-  }
-}
-
-@media (max-width: 480px) {
-  .header {
-    padding: 25px 15px;
-  }
-  
-  .content {
-    padding: 25px 15px;
-  }
-  
-  .name {
-    font-size: 1.6rem;
-  }
-  
-  .section h2 {
-    font-size: 1.2rem;
-  }
-  
-  .actionButton {
-    font-size: 0.9rem;
-    padding: 12px;
+  .statValue {
+    font-size: 1.5rem;
   }
 }
 

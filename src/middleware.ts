@@ -18,25 +18,78 @@ const authRoutes = [
   '/reset-password'
 ];
 
+// Cache for route matching to improve performance
+const routeCache = new Map<string, boolean>();
+
+// Optimized route matching function
+function isRouteMatch(pathname: string, routes: string[]): boolean {
+  const cacheKey = `${pathname}:${routes.join(',')}`;
+  
+  if (routeCache.has(cacheKey)) {
+    return routeCache.get(cacheKey)!;
+  }
+  
+  const result = routes.some(route => pathname.startsWith(route));
+  routeCache.set(cacheKey, result);
+  
+  // Limit cache size to prevent memory leaks
+  if (routeCache.size > 1000) {
+    const firstKey = routeCache.keys().next().value;
+    routeCache.delete(firstKey);
+  }
+  
+  return result;
+}
+
+// Fast token validation without complex parsing
+function getTokenFromRequest(request: NextRequest): string | null {
+  // Check cookies first (faster)
+  const refreshToken = request.cookies.get('refreshToken')?.value;
+  if (refreshToken) return refreshToken;
+  
+  // Fallback to headers
+  const authHeader = request.headers.get('authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.substring(7);
+  }
+  
+  return null;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Get the token from cookies or headers
-  const token = request.cookies.get('refreshToken')?.value || 
-                request.headers.get('authorization')?.replace('Bearer ', '');
-  
-  const isAuthenticated = !!token;
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-  const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
+  // Fast path: Skip middleware for static assets and API routes
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/static') ||
+    pathname.includes('.') // Skip files with extensions
+  ) {
+    return NextResponse.next();
+  }
 
-  // If trying to access protected route without authentication
+  // Fast path: Only process specific routes that need authentication checks
+  const isProtectedRoute = isRouteMatch(pathname, protectedRoutes);
+  const isAuthRoute = isRouteMatch(pathname, authRoutes);
+  
+  // If no special handling needed, continue immediately
+  if (!isProtectedRoute && !isAuthRoute) {
+    return NextResponse.next();
+  }
+  
+  // Fast token check
+  const token = getTokenFromRequest(request);
+  const isAuthenticated = !!token;
+
+  // Fast redirects for protected routes
   if (isProtectedRoute && !isAuthenticated) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // If trying to access auth routes while already authenticated
+  // Fast redirects for auth routes
   if (isAuthRoute && isAuthenticated) {
     return NextResponse.redirect(new URL('/profile', request.url));
   }
@@ -48,13 +101,17 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
+     * Match only specific routes that need authentication checks
+     * This significantly reduces middleware overhead
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
+    '/profile/:path*',
+    '/admin/:path*',
+    '/manage-stores/:path*',
+    '/history/:path*',
+    '/analytics/:path*',
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password/:path*'
   ],
 };

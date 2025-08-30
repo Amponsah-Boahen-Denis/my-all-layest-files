@@ -20,6 +20,7 @@ export interface IStore extends Document {
   source: 'user_created' | 'google_api' | 'database';
   googlePlaceId?: string;
   createdBy: mongoose.Types.ObjectId | string;
+  lastGoogleUpdate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -115,9 +116,12 @@ const StoreSchema = new Schema<IStore>({
     index: true
   },
   createdBy: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
+    type: Schema.Types.Mixed, // Allow both ObjectId and string for system-created stores
     required: [true, 'Creator is required']
+  },
+  lastGoogleUpdate: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true,
@@ -139,6 +143,7 @@ StoreSchema.index({ isActive: 1 });
 StoreSchema.index({ createdBy: 1 });
 StoreSchema.index({ source: 1 });
 StoreSchema.index({ googlePlaceId: 1 });
+StoreSchema.index({ lastGoogleUpdate: 1 }); // Index for Google update tracking
 
 // Compound index for location-based searches
 StoreSchema.index({ storeType: 1, country: 1, isActive: 1 });

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Store from '@/models/Store';
+import { GOOGLE_CONFIG, getGoogleApiKey, isGoogleApiConfigured, buildGoogleApiUrl } from '@/lib/googleConfig';
 
 // Google Places API integration
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
-const GOOGLE_PLACES_API_BASE = 'https://maps.googleapis.com/maps/api/place';
+const GOOGLE_API_KEY = getGoogleApiKey();
+const GOOGLE_PLACES_API_BASE = GOOGLE_CONFIG.PLACES_API_BASE;
 
 // Rate limiting cache (in production, use Redis or similar)
 const rateLimitCache = new Map<string, { count: number; resetTime: number }>();
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
       email: store.email,
       coordinates: {
         lat: store.coordinates?.lat || 0,
-        lon: store.coordinates?.lng || 0
+        lng: store.coordinates?.lng || 0
       },
       relevance: calculateRelevance(store, query),
       rating: store.rating,
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
     let googleCoordinates = null;
     let googleApiStatus = 'not_configured';
     
-    if (GOOGLE_API_KEY) {
+    if (isGoogleApiConfigured()) {
       try {
         const googleData = await searchGooglePlaces(query, location, country, radius, limit);
         googleResults = googleData.stores;
@@ -322,7 +323,7 @@ function calculateRelevance(store: any, query: string): number {
 
 // Search Google Places API
 async function searchGooglePlaces(query: string, location: any, country: string, radius: number, limit: number) {
-  if (!GOOGLE_API_KEY) {
+  if (!isGoogleApiConfigured()) {
     throw new Error('Google API key not configured');
   }
 
@@ -361,7 +362,7 @@ async function searchGooglePlaces(query: string, location: any, country: string,
       email: null, // Google doesn't provide email
       coordinates: {
         lat: place.geometry.location.lat,
-        lon: place.geometry.location.lng
+        lng: place.geometry.location.lng
       },
       relevance: calculateGoogleRelevance(place, query),
       rating: place.rating || 0,
@@ -391,7 +392,7 @@ async function searchGooglePlaces(query: string, location: any, country: string,
 
 // Geocode location using Google Geocoding API
 async function geocodeLocation(location: any, country: string) {
-  if (!GOOGLE_API_KEY) {
+  if (!isGoogleApiConfigured()) {
     throw new Error('Google API key not configured');
   }
 
@@ -491,7 +492,7 @@ async function cacheGoogleResults(stores: any[], country: string, location: stri
           country: country,
           coordinates: {
             lat: store.coordinates.lat,
-            lng: store.coordinates.lon
+            lng: store.coordinates.lng
           },
           description: store.description,
           hours: store.hours,

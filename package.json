@@ -4,10 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:fast": "next dev --turbopack --experimental-https",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
     "start": "next start",
+    "start:prod": "next start --experimental-https",
     "lint": "next lint",
-    "seed": "tsx src/lib/seedDatabase.ts"
+    "seed": "tsx src/lib/seedDatabase.ts",
+    "perf": "next build && next start --experimental-https",
+    "analyze": "ANALYZE=true npm run build"
   },
   "dependencies": {
     "@types/jsonwebtoken": "^9.0.10",
@@ -23,6 +28,7 @@
     "sanitize-html": "^2.12.1"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.4.6",
     "@types/bcryptjs": "^2.4.6",
     "@types/lodash": "^4.14.202",
     "@types/mongodb": "^3.6.14",

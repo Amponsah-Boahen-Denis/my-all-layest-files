@@ -12,6 +12,18 @@
   color: #666;
 }
 
+.mockDataWarning {
+  background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%);
+  color: white;
+  text-align: center;
+  padding: 12px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+}
+
 .header {
   display: flex;
   justify-content: space-between;
